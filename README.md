@@ -10,3 +10,6 @@ https://www.youtube.com/watch?v=Ww7-LC6rU6U
 
 Back End: SQL Alchemy
 https://docs.sqlalchemy.org/en/14/orm/quickstart.html 
+
+Integration:
+https://medium.com/plotly/building-plotly-dash-apps-on-a-lakehouse-with-databricks-sql-advanced-edition-4e1015593633
