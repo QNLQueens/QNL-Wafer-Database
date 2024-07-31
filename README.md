@@ -1,6 +1,10 @@
 # QNL-Wafer-Database
 Web interface to access the Wafer Samples used by QNL 
 
+References are included at the end.
+
+
+
 Front End: Plotly Dash
 https://dash.plotly.com/dash-core-components
 
