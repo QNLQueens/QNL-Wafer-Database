@@ -16,3 +16,4 @@ Integration:
 https://medium.com/plotly/building-plotly-dash-apps-on-a-lakehouse-with-databricks-sql-advanced-edition-4e1015593633
 
 Tkinter: https://www.youtube.com/watch?app=desktop&v=vusUfPBsggw
+https://www.youtube.com/watch?v=fvIThtPt6Nc
