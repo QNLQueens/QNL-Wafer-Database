@@ -1,18 +1,19 @@
 # QNL-Wafer-Database
 Web interface to access the Wafer Samples used by the Queen's Nanophotonics Lab (QNL).
 
-References are included at the end.
+References are included at the end with a short description. Highly recommend going through these to help understanding of the code in general.
 
 Contact: Dylan (dylan.burke@queensu.ca)
 
 ## Intro
 This database is a system of two programs which serves as a directory to easily access information about the Wafer Samples at QNL. Specifically, the aim of this project is to be able to easily access information about both wafers as well as the devices on the wafers. 
 
-Coded in Python
+All Coded in Python using several libraries, with two used extensivley; Tkinter and Plotly Dash for the Chip Input and the Viewing App, respectivley.
 
 ### File Management
 
-## Chip Input - Tkinter
+## Program Descriptions
+### Chip Input - Tkinter
 The Input interface is coded primarily using the Tkinter library, which allows for creating a basic Graphical User Interface (GUI). This library is pretty old and low level, but this also means it is open ended in its application. It is used here to make an interactive map that allows for the simple plotting of devices onto a wafer by simply drawing the perimeter of the device onto the wafer.
 
 ![image](https://github.com/user-attachments/assets/0c1f2936-cc4e-4238-8123-6aa1885292de)
@@ -23,7 +24,8 @@ Every wafer has its own Excel file where device data is stored, currently this d
 ![image](https://github.com/user-attachments/assets/85e2937a-5886-4d36-9370-52ba9922894c)
 ![image](https://github.com/user-attachments/assets/084bd433-741e-4ddb-b13c-2635fb4bfde1)
 
-## Viewing App - Plotly Dash
+### Viewing App - Plotly Dash
+
 
 ## Improvements needed
 
