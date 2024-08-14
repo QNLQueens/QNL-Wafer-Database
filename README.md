@@ -26,6 +26,7 @@ Every wafer has its own Excel file where device data is stored, currently this d
 
 ### Viewing App - Plotly Dash
 
+You will need certain files in an assets folder for the website to look correctly. The stylesheet is a css page, while favicon.ico and qnllogo.jpeg are simply the QNL logo in different formats. 
 
 ## Improvements needed
 
