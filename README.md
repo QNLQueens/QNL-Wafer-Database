@@ -35,21 +35,30 @@ This directory uses many excel files in different folders to store data. It woul
 A more useful edit feature is needed for both wafers and chips.
 
 ## Reference Links
-Front End: Plotly Dash
+### Front End: Plotly Dash
 Here is a list of all the components native to plotly dash, along with examples for every widget. 
+
 https://dash.plotly.com/dash-core-components
 
-AG Grid
+using dependent components: 
+
+https://www.youtube.com/watch?v=TsYwhX0hEA8
+
+### AG Grid
 This is the sortable grid that is compatible with dash
+
 https://www.ag-grid.com/
 This link shows how to integrate it into a dash interface:
+
 https://dash.plotly.com/dash-ag-grid
 
-Back End: SQL Alchemy
+### SQL 
+
 https://docs.sqlalchemy.org/en/14/orm/quickstart.html 
+
 https://www.youtube.com/watch?v=AKQ3XEDI9Mw&t=3s
 
-Tkinter: 
+### Tkinter
 Two videos on how to make tkinter apps that store user inputted information
 https://www.youtube.com/watch?app=desktop&v=vusUfPBsggw
 https://www.youtube.com/watch?v=fvIThtPt6Nc
