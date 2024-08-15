@@ -48,9 +48,8 @@ https://www.youtube.com/watch?v=TsYwhX0hEA8
 This is the sortable grid that is compatible with dash
 
 https://www.ag-grid.com/
-This link shows how to integrate it into a dash interface:
 
-https://dash.plotly.com/dash-ag-grid
+This link shows how to integrate it into a dash interface: https://dash.plotly.com/dash-ag-grid
 
 ### SQL 
 
@@ -60,7 +59,10 @@ https://www.youtube.com/watch?v=AKQ3XEDI9Mw&t=3s
 
 ### Tkinter
 Two videos on how to make tkinter apps that store user inputted information
+
 https://www.youtube.com/watch?app=desktop&v=vusUfPBsggw
+
+
 https://www.youtube.com/watch?v=fvIThtPt6Nc
 
 customtkinter add on: https://www.youtube.com/watch?v=Miydkti_QVE
