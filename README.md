@@ -25,12 +25,14 @@ Every wafer has its own Excel file where device data is stored, currently this d
 ![image](https://github.com/user-attachments/assets/084bd433-741e-4ddb-b13c-2635fb4bfde1)
 
 ### Viewing App - Plotly Dash
-The wafer view is used for simply accessing the data for both the wafers and devices. It uses Plotly Dash to develop the website, which is a library for Python that I find very easy to use and is super 
+The wafer view is used for simply accessing the data for both the wafers and devices. It uses Plotly Dash to develop the website, which is a library for Python that I find very easy to use and is great for viewing data, although it does not support saving new data, which is why tkinter is used for the editor. 
 
 You will need certain files in an assets folder for the website to look correctly. The stylesheet is a css page, while favicon.ico and qnllogo.jpeg are simply the QNL logo in different formats. 
 
 ## Improvements needed
+This directory uses many excel files in different folders to store data. It would be much more benificial (and probably easier), to use SQL to store all data (wafers and chips) into one .db file and sort through that.
 
+A more useful edit feature is needed for both wafers and chips.
 
 
 Front End: Plotly Dash
