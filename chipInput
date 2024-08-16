@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox, filedialog
+from tkinter import simpledialog, messagebox, filedialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
@@ -36,45 +36,71 @@ class WaferApp:
         self.shape_count = 0
         self.colcount = 0
 
+        self.global_filepath = "all_wafers.xlsx"
+        self.wafer_id = None
+        self.year = None
+
+        self.wafers_data = self.load_wafers_data()
         self.create_controls()
 
-        # Filepath for the current wafer
-        self.filepath = self.select_wafer_file()
-        if self.filepath:
-            self.load_saved_shapes()
-            self.draw_wafer()
+        self.year_combobox = None
+        self.wafer_combobox = None
+        self.create_comboboxes()
 
-    def select_wafer_file(self):
-        """Prompts the user to select an existing wafer file or create a new one."""
-        # Ask the user whether to open an existing file or create a new one
-        response = messagebox.askyesnocancel("Open or New Wafer", "Open existing wafer file? (Yes) or create new one? (No)")
+        self.draw_wafer()
 
-        if response is None:  # Cancel was pressed
-            self.parent.quit()
-        elif response:  # Yes, open an existing file
-            filepath = filedialog.askopenfilename(
-                title="Select Wafer File",
-                filetypes=[("Excel files", "*.xlsx")],
-                defaultextension=".xlsx"
-            )
-            if not filepath:
-                self.parent.quit()
-            return filepath
-        else:  # No, create a new file
-            filepath = filedialog.asksaveasfilename(
-                title="Create New Wafer File",
-                filetypes=[("Excel files", "*.xlsx")],
-                defaultextension=".xlsx"
-            )
-            if not filepath:
-                self.parent.quit()
-            # Create a new Excel file
-            workbook = openpyxl.Workbook()
+    def load_wafers_data(self):
+        """Loads wafer data from 'wafers.xlsx'."""
+        wafers_data = {}
+        wafers_filepath = "wafers.xlsx"
+
+        if os.path.exists(wafers_filepath):
+            workbook = openpyxl.load_workbook(wafers_filepath)
             sheet = workbook.active
-            heading = ["Chip ID", "Owner", "Device", "x1", "y1", "x2", "y2", "x3", "y3", "x4", "y4"]
-            sheet.append(heading)
-            workbook.save(filepath)
-            return filepath
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                year = row[0]  # The first column is the year
+                wafer_id = row[1]  # The second column is the wafer ID
+                if year and wafer_id:  # Ensure both values are present
+                    if year not in wafers_data:
+                        wafers_data[year] = []
+                    wafers_data[year].append(wafer_id)
+        return wafers_data
+
+
+    def create_comboboxes(self):
+        """Creates and places the year and wafer comboboxes."""
+        control_frame = tk.Frame(self.frame)
+        control_frame.pack(fill=tk.X)
+
+        year_label = tk.Label(control_frame, text="Year:")
+        year_label.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.year_combobox = ttk.Combobox(control_frame, state="readonly")
+        self.year_combobox.pack(side=tk.LEFT, padx=5, pady=5)
+        self.year_combobox["values"] = list(self.wafers_data.keys())
+        self.year_combobox.bind("<<ComboboxSelected>>", self.on_year_selected)
+
+        wafer_label = tk.Label(control_frame, text="Wafer ID:")
+        wafer_label.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.wafer_combobox = ttk.Combobox(control_frame, state="readonly")
+        self.wafer_combobox.pack(side=tk.LEFT, padx=5, pady=5)
+        self.wafer_combobox.bind("<<ComboboxSelected>>", self.on_wafer_selected)
+
+    def on_year_selected(self, event):
+        """Populates the wafer combobox based on the selected year."""
+        selected_year = self.year_combobox.get()
+        self.year = selected_year
+        self.wafer_combobox["values"] = self.wafers_data.get(selected_year, [])
+        self.wafer_combobox.set("")  # Clear the wafer selection
+
+    def on_wafer_selected(self, event):
+        """Sets the wafer ID based on the selected wafer in the combobox."""
+        selected_wafer = self.wafer_combobox.get()
+        if selected_wafer:
+            self.wafer_id = selected_wafer
+            self.load_saved_shapes()
 
     def create_controls(self):
         control_frame = tk.Frame(self.frame)
@@ -101,7 +127,7 @@ class WaferApp:
         self.canvas.draw()
 
     def on_click(self, event):
-        if event.inaxes != self.ax:
+        if event.inaxes != self.ax or not self.wafer_id:
             return
         if ((event.xdata-0.5)**2 + (event.ydata-0.5)**2) > 0.25:
             return  # Outside the wafer
@@ -121,7 +147,7 @@ class WaferApp:
         self.canvas.draw()
 
     def on_release(self, event):
-        if self.current_line is None:
+        if self.current_line is None or not self.wafer_id:
             return
         if event.inaxes != self.ax:
             return
@@ -134,7 +160,6 @@ class WaferApp:
         self.current_line.set_color('blue')
         self.current_line = None
 
-        # Check if the shape is closed
         if self.is_close_to_start(event.xdata, event.ydata):
             self.fill_shape()
             if len(self.lines) == 4:
@@ -162,7 +187,6 @@ class WaferApp:
         self.canvas.draw()
 
     def get_chip_data_and_save(self):
-        # Prompt the user to enter chip data
         chipID = simpledialog.askstring("Input", "Enter Chip ID:", parent=self.parent)
         owner = simpledialog.askstring("Input", "Enter Owner:", parent=self.parent)
         device = simpledialog.askstring("Input", "Enter Device:", parent=self.parent)
@@ -176,34 +200,37 @@ class WaferApp:
         x3, y3 = self.lines[2]['x2'], self.lines[2]['y2']
         x4, y4 = self.lines[3]['x2'], self.lines[3]['y2']
 
-        if not os.path.exists(self.filepath):
+        if not os.path.exists(self.global_filepath):
             workbook = openpyxl.Workbook()
             sheet = workbook.active
-            heading = ["Chip ID", "Owner", "Device", "x1", "y1", "x2", "y2", "x3", "y3", "x4", "y4"]
+            heading = ["Year", "Wafer ID", "Chip ID", "Owner", "Device", "x1", "y1", "x2", "y2", "x3", "y3", "x4", "y4"]
             sheet.append(heading)
-            workbook.save(self.filepath)
+            workbook.save(self.global_filepath)
 
-        workbook = openpyxl.load_workbook(self.filepath)
+        workbook = openpyxl.load_workbook(self.global_filepath)
         sheet = workbook.active
-        sheet.append([chipID, owner, device, x1, y1, x2, y2, x3, y3, x4, y4])
-        workbook.save(self.filepath)
+        sheet.append([self.year, self.wafer_id, chipID, owner, device, x1, y1, x2, y2, x3, y3, x4, y4])
+        workbook.save(self.global_filepath)
 
         messagebox.showinfo("Saved", f"Data for Chip ID {chipID} saved successfully!")
 
     def load_saved_shapes(self):
-        if not os.path.exists(self.filepath):
+        if not os.path.exists(self.global_filepath) or not self.wafer_id:
             return
 
-        workbook = openpyxl.load_workbook(self.filepath)
+        workbook = openpyxl.load_workbook(self.global_filepath)
         sheet = workbook.active
 
+        self.polygons.clear()
+
         for row in sheet.iter_rows(min_row=2, values_only=True):
-            chipID, owner, device, x1, y1, x2, y2, x3, y3, x4, y4 = row
-            vertices = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
-            polygon = patches.Polygon(vertices, closed=True, fill=True, color='blue', alpha=0.5)
-            self.polygons.append(polygon)
-            self.ax.add_patch(polygon)
-            self.shape_count += 1
+            year, wafer_id, chipID, owner, device, x1, y1, x2, y2, x3, y3, x4, y4 = row
+            if year == self.year and wafer_id == self.wafer_id:
+                vertices = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+                polygon = patches.Polygon(vertices, closed=True, fill=True, color='blue', alpha=0.5)
+                self.polygons.append(polygon)
+                self.ax.add_patch(polygon)
+                self.shape_count += 1
 
         self.canvas.draw()
 
@@ -222,7 +249,6 @@ class WaferApp:
     def save_html(self):
         messagebox.showinfo("Save", "Save functionality to be implemented.")
 
-# Create the main window and run the application
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Wafer Drawing App")
