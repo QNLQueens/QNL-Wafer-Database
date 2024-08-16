@@ -13,7 +13,7 @@ All Coded in Python using several libraries, with two used extensivley; Tkinter 
 ### File Management
 
 ## Program Descriptions
-### Chip Input - Tkinter
+### Chip and Wafer Inputs - Tkinter
 The Input interface is coded primarily using the Tkinter library, which allows for creating a basic Graphical User Interface (GUI). This library is pretty old and low level, but this also means it is open ended in its application. It is used here to make an interactive map that allows for the simple plotting of devices onto a wafer by simply drawing the perimeter of the device onto the wafer.
 
 ![image](https://github.com/user-attachments/assets/0c1f2936-cc4e-4238-8123-6aa1885292de)
@@ -24,7 +24,7 @@ Every wafer has its own Excel file where device data is stored, currently this d
 ![image](https://github.com/user-attachments/assets/85e2937a-5886-4d36-9370-52ba9922894c)
 ![image](https://github.com/user-attachments/assets/084bd433-741e-4ddb-b13c-2635fb4bfde1)
 
-### Viewing App - Plotly Dash
+### Directory - Plotly Dash
 The wafer view is used for simply accessing the data for both the wafers and devices. It uses Plotly Dash to develop the website, which is a library for Python that I find very easy to use and is great for viewing data, although it does not support saving new data, which is why tkinter is used for the editor. 
 
 You will need certain files in an assets folder for the website to look correctly. The stylesheet is a css page, while favicon.ico and qnllogo.jpeg are simply the QNL logo in different formats. 
