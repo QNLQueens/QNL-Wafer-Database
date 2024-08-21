@@ -44,6 +44,11 @@ using dependent components:
 
 https://www.youtube.com/watch?v=TsYwhX0hEA8
 
+### Dash Layout
+These links include examples and tutorials on editing the layout and style of the Dash website:
+https://hellodash.pythonanywhere.com/
+https://dash-building-blocks.com/
+
 ### AG Grid
 This is the sortable grid that is compatible with dash
 
