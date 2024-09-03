@@ -16,13 +16,6 @@ All Coded in Python using several libraries, with two used extensivley; Tkinter 
 ### Chip and Wafer Inputs - Tkinter
 The Input interface is coded primarily using the Tkinter library, which allows for creating a basic Graphical User Interface (GUI). This library is pretty old and low level, but this also means it is open ended in its application. It is used here to make an interactive map that allows for the simple plotting of devices onto a wafer by simply drawing the perimeter of the device onto the wafer.
 
-![image](https://github.com/user-attachments/assets/0c1f2936-cc4e-4238-8123-6aa1885292de)
-![image](https://github.com/user-attachments/assets/eb242896-837f-4ac6-86dd-1e152ee3a451)
-
-Every wafer has its own Excel file where device data is stored, currently this data consists of an ID, the chip's owner and a short description which is inputed by the user after drawing the device. In addition, the coordinates of the four corners are saved.
-
-![image](https://github.com/user-attachments/assets/85e2937a-5886-4d36-9370-52ba9922894c)
-![image](https://github.com/user-attachments/assets/084bd433-741e-4ddb-b13c-2635fb4bfde1)
 
 ### Directory - Plotly Dash
 The wafer view is used for simply accessing the data for both the wafers and devices. It uses Plotly Dash to develop the website, which is a library for Python that I find very easy to use and is great for viewing data, although it does not support saving new data, which is why tkinter is used for the editor. 
