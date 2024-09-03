@@ -22,6 +22,8 @@ The wafer view is used for simply accessing the data for both the wafers and dev
 
 You will need certain files in an assets folder for the website to look correctly. The stylesheet is a css page, while favicon.ico and qnllogo.jpeg are simply the QNL logo in different formats. 
 
+The buttons will need to open the tkinter files. Make sure that you call these files.
+
 ## Improvements needed
 This directory uses many excel files in different folders to store data. It would be much more benificial (and probably easier), to use SQL to store all data (wafers and chips) into one .db file and sort through that.
 
