@@ -1,0 +1,132 @@
+#overallContainer {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    gap: 5px;
+    flex-direction: row;
+    padding: 0;
+    margin: 0;
+}
+
+#navPin {
+    width: 100%;
+    display: none;
+    justify-content: end;
+    padding-right: 3px;
+    padding-top: 3px;
+}
+
+#themeSwitchHolder label {
+    cursor: pointer;
+}
+
+@media only screen and (max-width: 600px) {
+    #overallContainer {
+        flex-direction: column;
+    }
+
+    #mobileNav {
+        position: sticky;
+        top: 0px;
+        border-bottom: 1pt solid black;
+    }
+
+    #mobileMenu > div {
+        padding-right: 10px;
+        padding-left: 5px;
+        padding-top: 5px;
+    }
+
+    #mobileMenu {
+        position: absolute;
+    }
+}
+
+@media only screen and (min-width: 601px) and (max-width: 768px) {
+    #navbar {
+        width: 10rem;
+    }
+
+    #themeSwitchHolder > div {
+        justify-content: end;
+        padding-right: 5px;
+        padding-top: 5px;
+    }
+}
+
+@media (any-pointer: coarse) and (min-width: 769px) {
+    #navbar {
+        width: 13rem;
+    }
+
+    #themeSwitchHolder > div {
+        justify-content: end;
+        padding-right: 5px;
+        padding-top: 5px;
+    }
+}
+
+@media only screen and (min-width: 769px) and (any-pointer: fine) {
+    #navbar {
+        width: 16rem;
+    }
+
+    #themeSwitchHolder > div {
+        justify-content: end;
+        padding-right: 5px;
+        padding-top: 5px;
+    }
+
+    #navPin {
+        display: flex;
+    }
+
+    #navPin > div {
+        display: none;
+        position: absolute;
+        z-index: 50;
+        cursor: pointer;
+        margin-right: 2px;
+        padding: 1px;
+        border-radius: 3px;
+        background-color: silver;
+        border: 1px solid black;
+        color: black;
+    }
+
+    #navbar.collapsible #navPin > div {
+        background-color: #4682B4;
+        color: silver;
+    }
+
+    #navPin > div:hover {
+        filter: brightness(1.15)
+    }
+
+    #navbar:hover #navPin > div {
+        display: block;
+    }
+
+    #navbar.collapsible:hover {
+        width: 16rem;
+    }
+
+    #navbar.collapsible {
+        width: 5rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.5s ease-out;
+    }
+
+    #navbar.collapsible .mantine-Accordion-content {
+        display: none;
+        overflow: hidden;
+    }
+
+    #navbar.collapsible:hover .mantine-Accordion-content {
+        display: block;
+    }
+}
