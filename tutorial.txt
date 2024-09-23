@@ -1,0 +1,6 @@
+Welcome to the QNL Wafer Directory. 
+To access a wafer, click the cell containing the Wafer ID.
+
+To add a new wafer, click the "add new wafer button" and fill out the relevant fields.
+
+To add a new chip to a wafer, click the "add new chip button". First select the year and ID of the wafer you are adding a chip to, then draw the perimeter of the chip by clicking and dragging on the map (Note that only 4-sided wafers are supported). Then fill out the relevant fields in the pop ups that follow.
