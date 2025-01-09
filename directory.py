@@ -46,6 +46,7 @@ def edit_wafer_interface():
     root = tk.Tk()
     root.title("Edit Wafer")
     app = WaferEdit(root)
+
     root.mainloop()
 
 
@@ -82,11 +83,14 @@ ccolumnDefs = [
 ]
 
 #read dataframes for wafers and chips (point of improvement: make this one excel file with two sheets)
-wdf = pd.read_excel(io='wafers.xlsx', sheet_name=None)['Sheet']
-cdf = pd.read_excel(io='all_wafers.xlsx', sheet_name=None)['Sheet']
+def read_wafer_data():
+    wdf = pd.read_excel(io='wafers.xlsx', sheet_name=None)['Sheet']
+    cdf = pd.read_excel(io='all_wafers.xlsx', sheet_name=None)['Sheet']
+    return wdf, cdf
 
 #initialize app (dbc.theme.CYBORG is the colour theme, CYBORG is the dark mode-ish thing that is active right now)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
+app.config.suppress_callback_exceptions=True
 
 app.title = "Wafer Directory"
 
@@ -151,8 +155,9 @@ app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 #shows the relevant content based on which page you are viewing
 def render_page_content(pathname):
+    wdf, cdf = read_wafer_data()
     if pathname == "/":
-        return html.Div([
+        app.layout = html.Div([
             #year select
             html.H2("Select Year:", style={'text-align': 'left', 'font-size': "15px", 'color':'#000000'}),
             dcc.Dropdown(
@@ -160,6 +165,7 @@ def render_page_content(pathname):
                 options=[{'label': i, 'value': i} for i in wdf.Year.unique()],
                 style={'color': '#000000', 'background-color': '#ffffff', 'border': '1px solid #ced4da', 'border-radius': '4px', 'font-size': '12px'}
             ),
+            dbc.Button('Refresh', id='refresh', color="primary", className="mb-2", style={"font-size": "12px", "width": "10%"}),
             html.Br(),
             dbc.Card(
                 dbc.CardBody(
@@ -204,6 +210,7 @@ def render_page_content(pathname):
                 className="g-4"
             ),
         ])
+        return app.layout
 
     elif pathname == "/page-1":
         #tutorial page
@@ -225,8 +232,9 @@ def render_page_content(pathname):
         className="p-3 bg-light rounded-3",
     )
 
-@app.callback(Output('table', 'children'), [Input('dropdownYear', 'value')])
-def update_output(dropdownYear):
+@app.callback(Output('table', 'children'), [Input('dropdownYear', 'value'), Input('refresh', 'n_clicks')])
+def update_output(dropdownYear, n_clicks):
+    wdf, cdf = read_wafer_data()
     if dropdownYear is None:
         table = dag.AgGrid(
             id="grid",
@@ -266,6 +274,7 @@ def display_cell_clicked_on(cell):
     Input("selected_wafer", "children")
 )
 def updateChipFigures(wafer):
+    wdf, cdf = read_wafer_data()
     cdata = cdf.loc[cdf['Wafer ID'] == wafer]
 
     dtable = dag.AgGrid(
@@ -331,11 +340,12 @@ def handle_button_click(n_clicks):
         add_new_chip_interface()
     return
 
-@app.callback([Input("editWafer","n_clicks")])
-def handle_button_click(n_clicks):
+@app.callback([Input("editWafer","n_clicks"), Input('dropdownYear', 'value')])
+def handle_button_click(n_clicks, dropdownYear):
     if n_clicks > 0:
         edit_wafer_interface()
+    return
 
 
 if __name__ == "__main__":
-    app.run_server(jupyter_mode="external", port=8889)
+    app.run_server(jupyter_mode="external", port=8889, debug=True)
