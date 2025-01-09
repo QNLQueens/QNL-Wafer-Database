@@ -24,6 +24,7 @@ import dash_bootstrap_components as dbc
 #import the tkinter apps to add new wafers and chips from their respective files in the folder
 from chipApp import WaferApp
 from waferApp import WaferAdd
+from edit import WaferEdit
 
 #opens the text for the tutorial page
 tut = open("tutorial.txt", "r")
@@ -41,6 +42,13 @@ def add_new_wafer_interface():
     app = WaferAdd(root)
     root.mainloop()
 
+def edit_wafer_interface():
+    root = tk.Tk()
+    root.title("Edit Wafer")
+    app = WaferEdit(root)
+    root.mainloop()
+
+
 #column definitions for the data tables:
 
 #wafers (once year is selected)
@@ -49,7 +57,10 @@ wcolumnDefs = [
     { 'field': 'Type'},
     { 'field': 'Intended Use'},
     { 'field': 'Date Acquired'},
-    { 'field': 'Summary'}
+    { 'field': 'Summary'},
+    { 'field': 'From'},
+    { 'field': 'Substrate'},
+    { 'field': 'Quality'}
 ]
 #wafers (when no year is selected)
 gwcolumnDefs = [
@@ -58,7 +69,10 @@ gwcolumnDefs = [
     { 'field': 'Type'},
     { 'field': 'Intended Use'},
     { 'field': 'Date Acquired'},
-    { 'field': 'Summary'}
+    { 'field': 'Summary'},
+    { 'field': 'From'},
+    { 'field': 'Substrate'},
+    { 'field': 'Quality'}
 ]
 #chips
 ccolumnDefs = [
@@ -120,6 +134,7 @@ sidebar = html.Div(
         #Add new buttons
         dbc.Button('Add New Wafer', id='addNewWafer', color="primary", className="mb-2", style={"font-size": "12px", "width": "100%"}),
         dbc.Button('Add New Chip', id='addNewChip', color="primary", style={"font-size": "12px", "width": "100%"}),
+        
     ],
     style=SIDEBAR_STYLE,
 )
@@ -128,6 +143,8 @@ sidebar = html.Div(
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
 app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
+
+
 
 # Callbacks for page content and interactions
 
@@ -155,6 +172,7 @@ def render_page_content(pathname):
                 style={"max-height": "200px", "overflow-y": "auto"}
             ),
             html.H2("Selected Wafer:", style={'text-align': 'left', 'font-size': "12px", 'color':'#000000'}),
+            dbc.Button('Edit Wafer', id='editWafer', color="primary", className="mb-2", style={"font-size": "12px", "width": "10%"}),
             html.H2(id="selected_wafer", style={"font-size": "14px", 'color':'#d47604'}),
             dbc.Row(
                 [
@@ -241,6 +259,7 @@ def display_cell_clicked_on(cell):
         wafer = "None"
     return wafer
 
+
 @app.callback(
     Output("dTable", "children"),
     Output("fig", "children"),
@@ -311,6 +330,11 @@ def handle_button_click(n_clicks):
     if n_clicks > 0:
         add_new_chip_interface()
     return
+
+@app.callback([Input("editWafer","n_clicks")])
+def handle_button_click(n_clicks):
+    if n_clicks > 0:
+        edit_wafer_interface()
 
 
 if __name__ == "__main__":
