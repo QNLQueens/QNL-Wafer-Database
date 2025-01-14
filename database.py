@@ -1,4 +1,5 @@
 import ibis
+import ibis.expr
 import pandas as pd
 import datetime
 import glob
@@ -30,7 +31,7 @@ def load_most_recent():
     con.insert('metadata', pd.DataFrame({'Date': [date]}), overwrite=True)
     return con
 
-def initialize_from_excel(con, filename, table_name):
+def initialize_from_excel(con, filename, table_name, index='Wafer ID'):
     """
         Initialize a table in the database from an Excel file.
 
@@ -44,23 +45,35 @@ def initialize_from_excel(con, filename, table_name):
 
 
     df = pd.read_excel(io=filename, sheet_name=None)['Sheet']
+    df = df.fillna('')
+    object_columns = df.select_dtypes(include='object').columns
+    for column in object_columns:
+        df[column] = df[column].astype('string')
 
     # SQLite statement which creates a table with the same columns as the DataFrame
     # The ID column will have the unique constraint, and be the main key
-    # create_table = f'CREATE TABLE {table_name} (\n'
-    # columns = df.columns
-    # columns = columns.drop('ID')
-    # columns = [c if c != 'From' else 'Origin' for c in columns ]
-    # create_table += 'ID TEXT PRIMARY KEY,\n'
-    # for column in columns:
-    #     create_table += f'{column} TEXT,\n'
-    # create_table = create_table[:-2] + ')'
-    # print(create_table)
-    # con.raw_sql(create_table)
-    # print(df)
-    # con.insert(table_name, ibis.memtable())
+    create_table = f'CREATE TABLE {table_name} (\n'
+    columns = df.columns
+    columns = columns.drop(index)
+    create_table += f'{index.replace(' ', '_')} TEXT PRIMARY KEY,\n'
+    for column in columns:
+        datatype = df[column].dtype
+        column = column.replace(' ', '_')
+        if datatype == 'int64':
+            create_table += f'{column} INTEGER,\n'
+        elif datatype == 'float64':
+            create_table += f'{column} REAL,\n'
+        else: 
+            create_table += f'{column} TEXT,\n'
+    create_table = create_table[:-2] + ')'
+    con.raw_sql(create_table)
+    df = df.reindex(columns=[index] + list(columns))
+    con.insert(table_name, df)
+
+
     
-    con.create_table(table_name, ibis.memtable(df))
+    # con.create_table(table_name, ibis.memtable(df))
+    # print(con.compile(con.create_table(table_name, ibis.memtable(df))))
 
 def save_to_excel(con, table_name, filename):
     """
@@ -90,7 +103,7 @@ def database_from_excel(con):
     """
 
     initialize_from_excel(con, './database/wafers.xlsx', 'wafers')
-    initialize_from_excel(con, './database/all_wafers.xlsx', 'chips')
+    initialize_from_excel(con, './database/all_wafers.xlsx', 'chips', index='Chip ID')
 
 def read_database(con, table_name):
     """
@@ -136,7 +149,7 @@ def overwrite_database(con, table_name, df):
 
     con.insert(table_name, df, overwrite=True)
 
-def update_database(con, table_name, row):
+def update_database(con, table_name, row, index='Wafer ID'):
     """
         Append a row to a table in the database.
 
@@ -148,7 +161,10 @@ def update_database(con, table_name, row):
         Returns:
             None
     """
- 
+    table = con.table(table_name).execute()
+    if row[index] in table[index].values:
+        con.update(table_name, row)
+
     con.insert(table_name, row)
 
 def execute(con):
@@ -157,11 +173,11 @@ def execute(con):
 if __name__ == '__main__':
     con = load_most_recent()
     ibis.options.interactive = True
-    try:
-        database_from_excel(con)
-    except Exception as e:
-        print(e)
+    
+    database_from_excel(con)
+        
     print(con.list_tables())
+
     
     # Load the database
     wafers = con.table('wafers')
@@ -184,7 +200,7 @@ if __name__ == '__main__':
     print(wafers2.head())
 
     # New filter
-    wafers3 = wafers.filter([wafers['Intended Use'] == 'Waveguides'])
+    wafers3 = wafers.filter([wafers['Intended_Use'] == 'Waveguides'])
 
     # Overwrite the database
     overwrite_database(con, 'wafers2', wafers3)
@@ -194,7 +210,8 @@ if __name__ == '__main__':
     print(wafers4.head())
 
     # Single row update
-    wafers5 = wafers.filter([wafers['ID'] == 'QNL-001'])
+    wafers5 = wafers.filter([wafers['Wafer_ID'] == 'QNL-001']).execute()
+    wafers5['Wafer_ID'] = 'testing99'
     print(wafers5.head())
 
     update_database(con, 'wafers2', wafers5)

@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 import os
 import openpyxl
+from database import *
 
 class WaferEdit:
     def __init__(self, window):
@@ -91,120 +92,86 @@ class WaferEdit:
         submit_button = tkinter.Button(frame, text="Submit", command=self.save_data)
         submit_button.grid(row=2, column=0, padx=20, pady=10)
 
-    def load_wafer_ids(self):
-        """Load Wafer IDs from the Excel file and populate the listbox."""
-        filepath = "wafers.xlsx"
-        if not os.path.exists(filepath):
-            return  # No data file yet, so nothing to load
+        self.fields = {
+            'Year': self.year_spinbox,
+            'ID': self.wid_entry,
+            'Type': self.wtype_combobox,
+            'Intended Use': self.intuse_entry,
+            'Date Acquired': self.date_entry,
+            'Summary': self.summary_entry,
+            'From': self.from_combobox,
+            'Substrate': self.sub_combobox,
+            'Quality': self.qual_combobox
+        }
 
-        workbook = openpyxl.load_workbook(filepath)
-        sheet = workbook.active
+        self.types = {
+            'Year': int,
+            'ID': str,
+            'Type': str,
+            'Intended Use': str,
+            'Date Acquired': str,
+            'Summary': str,
+            'From': str,
+            'Substrate': str,
+            'Quality': str
+        }
+
+    def load_wafer_ids(self):
+        """Load Wafer IDs from the database and populate the listbox."""
+        con = load_most_recent()
+        wafers = con.table('wafers').execute()
+        wafer_ids = wafers['ID']
+
 
         # Clear the listbox before populating
         self.wid_listbox.delete(0, tkinter.END)
 
         # Assuming Wafer IDs are in the second column
-        for row in sheet.iter_rows(min_row=2, values_only=True):  # Skip the header
-            self.wid_listbox.insert(tkinter.END, row[1])
+        for wafer_id in wafer_ids:
+            self.wid_listbox.insert(tkinter.END, wafer_id)
 
-        workbook.close()
 
     def load_data(self):
-        """Load the data for the selected Wafer ID from the Excel file."""
+        """Load the data for the selected Wafer ID from the Database."""
         try:
             selected_wid = self.wid_listbox.get(self.wid_listbox.curselection())
         except tkinter.TclError:
             messagebox.showwarning("Selection Error", "Please select a Wafer ID to open.")
             return
 
-        filepath = "wafers.xlsx"
-        if not os.path.exists(filepath):
-            messagebox.showwarning("File Not Found", "No data file found.")
-            return
+        # Load the database
+        con = load_most_recent()
+        wafers = con.table('wafers').execute()
 
-        workbook = openpyxl.load_workbook(filepath)
-        sheet = workbook.active
+        columns = list(wafers.columns)
+        row = wafers.loc[wafers['ID'] == selected_wid]
+        
+        if not row.empty:
+            # Populate the form fields with the data
+            for column in columns:
+                print(row[column].values[0])
+                if isinstance(self.fields[column], ttk.Combobox):
+                    self.fields[column].set(row[column].values[0])
+                else:
+                    self.fields[column].delete(0, tkinter.END)
+                    self.fields[column].insert(0, str(row[column].values[0]))
 
-        # Search for the row with the matching Wafer ID
-        for row in sheet.iter_rows(values_only=True):
-            if row[1] == selected_wid:  # Assuming the Wafer ID is in the second column
-                # Prepopulate form with the row data
-                self.wid_entry.delete(0, "end")
-                self.wid_entry.insert(0, row[1])
+            return    
 
-                self.year_spinbox.delete(0, "end")
-                self.year_spinbox.insert(0, row[0])
-
-                self.wtype_combobox.set(row[2])
-                self.intuse_entry.delete(0, "end")
-                self.intuse_entry.insert(0, row[3])
-
-                self.date_entry.delete(0, "end")
-                self.date_entry.insert(0, row[4])
-
-                self.summary_entry.delete(0, "end")
-                self.summary_entry.insert(0, row[5])
-
-                self.from_combobox.set(row[6])
-                self.sub_combobox.set(row[7])
-                self.qual_combobox.set(row[8])
-
-                workbook.close()
-                return
-
-        workbook.close()
         messagebox.showwarning("Not Found", f"No data found for Wafer ID: {selected_wid}")
 
     def save_data(self):
         """Save or update the form data in the Excel file."""
-        filepath = "wafers.xlsx"
-
-        # Load the existing workbook or create a new one if it doesn't exist
-        if os.path.exists(filepath):
-            workbook = openpyxl.load_workbook(filepath)
-            sheet = workbook.active
-        else:
-            workbook = openpyxl.Workbook()
-            sheet = workbook.active
-            # Add headers
-            sheet.append(["Year", "Wafer ID", "Wafer Type", "Intended Use", "Date Acquired",
-                        "Summary", "Created At", "Substrate", "Quality"])
-
         # Gather data from the form
-        year = self.year_spinbox.get()
-        wid = self.wid_entry.get()
-        wtype = self.wtype_combobox.get()
-        intuse = self.intuse_entry.get()
-        date_acquired = self.date_entry.get()
-        summary = self.summary_entry.get()
-        created_at = self.from_combobox.get()
-        substrate = self.sub_combobox.get()
-        quality = self.qual_combobox.get()
-
-        # Search for the Wafer ID in the file and overwrite the existing entry
-        found = False
-        for row_index, row in enumerate(sheet.iter_rows(min_row=2, values_only=False), start=2):  # Skip header row
-            if row[1].value == wid:  # Wafer ID is in the second column (index 1)
-                # Update the existing row
-                found = True
-                sheet.cell(row=row_index, column=1).value = year
-                sheet.cell(row=row_index, column=2).value = wid
-                sheet.cell(row=row_index, column=3).value = wtype
-                sheet.cell(row=row_index, column=4).value = intuse
-                sheet.cell(row=row_index, column=5).value = date_acquired
-                sheet.cell(row=row_index, column=6).value = summary
-                sheet.cell(row=row_index, column=7).value = created_at
-                sheet.cell(row=row_index, column=8).value = substrate
-                sheet.cell(row=row_index, column=9).value = quality
-                break
+        df = pd.DataFrame(columns=self.fields.keys())
+        for column, field in self.fields.items():
+            df[column] = [self.types[column](field.get())]
+        print(df)
+        # Load the database
+        con = load_most_recent()
         
-        if not found:
-            # If Wafer ID doesn't exist, append new row
-            sheet.append([year, wid, wtype, intuse, date_acquired, summary, created_at, substrate, quality])
-
-        # Save the workbook
-        workbook.save(filepath)
-        workbook.close()
+        # Update the database with the new data
+        update_database(con, 'wafers', df)
 
         # Show success message
         messagebox.showinfo("Data Saved", "The data has been saved successfully!")

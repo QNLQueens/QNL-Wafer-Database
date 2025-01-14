@@ -55,7 +55,7 @@ def edit_wafer_interface():
 #column definitions for the data tables:
 #wafers (once year is selected)
 wcolumnDefs = [
-    { 'field': 'ID' },
+    { 'field': 'Wafer ID' },
     { 'field': 'Type'},
     { 'field': 'Intended Use'},
     { 'field': 'Date Acquired'},
@@ -67,7 +67,7 @@ wcolumnDefs = [
 #wafers (when no year is selected)
 gwcolumnDefs = [
     { 'field': 'Year' },
-    { 'field': 'ID' },
+    { 'field': 'Wafer ID' },
     { 'field': 'Type'},
     { 'field': 'Intended Use'},
     { 'field': 'Date Acquired'},
@@ -275,7 +275,7 @@ def display_cell_clicked_on(cell):
 def updateChipFigures(wafer):
     con = load_most_recent()
     cdf = read_database(con, 'chips').execute()
-    cdata = cdf.loc[cdf['Wafer ID'] == wafer]
+    cdata = cdf.loc[cdf['Wafer Wafer ID'] == wafer]
 
     dtable = dag.AgGrid(
         id="get-started-example-basic",

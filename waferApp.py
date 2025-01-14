@@ -113,7 +113,7 @@ class WaferAdd:
         # if not os.path.exists(filepath):
         #     workbook = openpyxl.Workbook()
         #     sheet = workbook.active
-        #     heading = ["Year", "ID", "Type", "Intended Use", "Date Acquired", "Summary", "From", "Substrate", "Quality"]
+        #     heading = ["Year", "Wafer ID", "Type", "Intended Use", "Date Acquired", "Summary", "From", "Substrate", "Quality"]
         #     sheet.append(heading)
         #     workbook.save(filepath)
 
