@@ -7,6 +7,7 @@ import matplotlib.patches as patches
 import math
 import os
 import openpyxl
+from database import *
 
 class WaferApp:
     def __init__(self, parent):
@@ -51,20 +52,22 @@ class WaferApp:
 
     def load_wafers_data(self):
         """Loads wafer data from 'wafers.xlsx'."""
-        wafers_data = {}
-        wafers_filepath = "wafers.xlsx"
+        con = load_most_recent()
+        wafers_data = con.table('wafers').execute().to_dict()
+        # wafers_data = {}
+        # wafers_filepath = "wafers.xlsx"
 
-        if os.path.exists(wafers_filepath):
-            workbook = openpyxl.load_workbook(wafers_filepath)
-            sheet = workbook.active
+        # if os.path.exists(wafers_filepath):
+        #     workbook = openpyxl.load_workbook(wafers_filepath)
+        #     sheet = workbook.active
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):
-                year = row[0]  # The first column is the year
-                wafer_id = row[1]  # The second column is the wafer ID
-                if year and wafer_id:  # Ensure both values are present
-                    if year not in wafers_data:
-                        wafers_data[year] = []
-                    wafers_data[year].append(wafer_id)
+        #     for row in sheet.iter_rows(min_row=2, values_only=True):
+        #         year = row[0]  # The first column is the year
+        #         wafer_id = row[1]  # The second column is the wafer ID
+        #         if year and wafer_id:  # Ensure both values are present
+        #             if year not in wafers_data:
+        #                 wafers_data[year] = []
+        #             wafers_data[year].append(wafer_id)
         return wafers_data
 
 

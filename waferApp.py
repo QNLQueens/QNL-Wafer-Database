@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 import os
 import openpyxl
+from database import *
 
 class WaferAdd:
     def __init__(self, window):
@@ -101,23 +102,28 @@ class WaferAdd:
 
         # Filepath for Excel file
         filepath = "wafers.xlsx"
-
-
+        
+        con = load_most_recent()
+        wafers = read_database(con, 'wafers')
+        new_row = pd.DataFrame([[year, wid, wtype, intuse, date, summary, create, substrate, quality]], columns=wafers.columns)
+        update_database(con, 'wafers', new_row)
+        con.execute()
+        
         # Create a new Excel file if it doesn't exist
-        if not os.path.exists(filepath):
-            workbook = openpyxl.Workbook()
-            sheet = workbook.active
-            heading = ["Year", "ID", "Type", "Intended Use", "Date Acquired", "Summary", "From", "Substrate", "Quality"]
-            sheet.append(heading)
-            workbook.save(filepath)
+        # if not os.path.exists(filepath):
+        #     workbook = openpyxl.Workbook()
+        #     sheet = workbook.active
+        #     heading = ["Year", "ID", "Type", "Intended Use", "Date Acquired", "Summary", "From", "Substrate", "Quality"]
+        #     sheet.append(heading)
+        #     workbook.save(filepath)
 
-        # Append data to the Excel file
-        workbook = openpyxl.load_workbook(filepath)
-        sheet = workbook.active
-        sheet.append([year, wid, wtype, intuse, date, summary, create, substrate, quality])
-        workbook.save(filepath)
+        # # Append data to the Excel file
+        # workbook = openpyxl.load_workbook(filepath)
+        # sheet = workbook.active
+        # sheet.append([year, wid, wtype, intuse, date, summary, create, substrate, quality])
+        # workbook.save(filepath)
 
-        workbook.close()
+        # workbook.close()
 
         # Show confirmation message
         messagebox.showinfo("Success", "Data entered successfully!")

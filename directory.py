@@ -53,7 +53,6 @@ def edit_wafer_interface():
 
 
 #column definitions for the data tables:
-
 #wafers (once year is selected)
 wcolumnDefs = [
     { 'field': 'ID' },
@@ -153,7 +152,8 @@ app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 #shows the relevant content based on which page you are viewing
 def render_page_content(pathname):
-    wdf, cdf = read_wafer_data()
+    con = load_most_recent()
+    wdf = read_database(con, 'wafers').execute()
     if pathname == "/":
         app.layout = html.Div([
             #year select
@@ -232,7 +232,8 @@ def render_page_content(pathname):
 
 @app.callback(Output('table', 'children'), [Input('dropdownYear', 'value'), Input('refresh', 'n_clicks')])
 def update_output(dropdownYear, n_clicks):
-    wdf, cdf = read_wafer_data()
+    con = load_most_recent()
+    wdf = read_database(con, 'wafers').execute()
     if dropdownYear is None:
         table = dag.AgGrid(
             id="grid",
@@ -272,7 +273,8 @@ def display_cell_clicked_on(cell):
     Input("selected_wafer", "children")
 )
 def updateChipFigures(wafer):
-    wdf, cdf = read_wafer_data()
+    con = load_most_recent()
+    cdf = read_database(con, 'chips').execute()
     cdata = cdf.loc[cdf['Wafer ID'] == wafer]
 
     dtable = dag.AgGrid(

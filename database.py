@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import glob
 import os
+import sqlite3
 ibis.set_backend('sqlite')
 
 def load_most_recent():
@@ -43,6 +44,22 @@ def initialize_from_excel(con, filename, table_name):
 
 
     df = pd.read_excel(io=filename, sheet_name=None)['Sheet']
+
+    # SQLite statement which creates a table with the same columns as the DataFrame
+    # The ID column will have the unique constraint, and be the main key
+    # create_table = f'CREATE TABLE {table_name} (\n'
+    # columns = df.columns
+    # columns = columns.drop('ID')
+    # columns = [c if c != 'From' else 'Origin' for c in columns ]
+    # create_table += 'ID TEXT PRIMARY KEY,\n'
+    # for column in columns:
+    #     create_table += f'{column} TEXT,\n'
+    # create_table = create_table[:-2] + ')'
+    # print(create_table)
+    # con.raw_sql(create_table)
+    # print(df)
+    # con.insert(table_name, ibis.memtable())
+    
     con.create_table(table_name, ibis.memtable(df))
 
 def save_to_excel(con, table_name, filename):
@@ -131,9 +148,12 @@ def update_database(con, table_name, row):
         Returns:
             None
     """
-
+ 
     con.insert(table_name, row)
 
+def execute(con):
+    con.execute()
+    
 if __name__ == '__main__':
     con = load_most_recent()
     ibis.options.interactive = True
@@ -141,7 +161,6 @@ if __name__ == '__main__':
         database_from_excel(con)
     except Exception as e:
         print(e)
-        
     print(con.list_tables())
     
     # Load the database
@@ -149,6 +168,11 @@ if __name__ == '__main__':
     chips = con.table('chips')
 
     print(wafers.head())
+
+    try:
+        con.drop_table('wafers2')
+    except:
+        pass
 
     # Filter the database
     wafers2 = wafers.filter([wafers['Year'] == 2024])
@@ -171,6 +195,7 @@ if __name__ == '__main__':
 
     # Single row update
     wafers5 = wafers.filter([wafers['ID'] == 'QNL-001'])
+    print(wafers5.head())
 
     update_database(con, 'wafers2', wafers5)
     
