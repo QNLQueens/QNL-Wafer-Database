@@ -21,6 +21,8 @@ import numpy as np
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 
+from database import *
+
 #import the tkinter apps to add new wafers and chips from their respective files in the folder
 from chipApp import WaferApp
 from waferApp import WaferAdd
@@ -82,11 +84,7 @@ ccolumnDefs = [
     { 'field': 'Device' },
 ]
 
-#read dataframes for wafers and chips (point of improvement: make this one excel file with two sheets)
-def read_wafer_data():
-    wdf = pd.read_excel(io='wafers.xlsx', sheet_name=None)['Sheet']
-    cdf = pd.read_excel(io='all_wafers.xlsx', sheet_name=None)['Sheet']
-    return wdf, cdf
+
 
 #initialize app (dbc.theme.CYBORG is the colour theme, CYBORG is the dark mode-ish thing that is active right now)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])

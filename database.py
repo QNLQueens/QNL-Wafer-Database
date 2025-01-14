@@ -1,12 +1,35 @@
 import ibis
 import pandas as pd
-
+import datetime
+import glob
+import os
 ibis.set_backend('sqlite')
-con = ibis.sqlite.connect('./database/data.sqlite3')
 
+def load_most_recent():
+    """
+        Load the most recent data from the database.
+        If it is a new day, save a new database with the most recent data.
 
+        Args:
+            None
 
-def initialize_from_excel(con, filename):
+        Returns:
+            ibis.table: The table object.
+    """
+    date = datetime.datetime.now().strftime('%Y-%m-%d')
+    data_files = glob.glob('./database/data*.sqlite3')
+    if len(data_files) != 0: 
+        most_recent_file = max(data_files, key=os.path.getctime) 
+        con_old = ibis.sqlite.connect(most_recent_file)
+        metadata = con_old.table('metadata').execute()
+        if metadata['Date'][0] == date:
+            return con_old
+    con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
+    con.create_table('metadata', ibis.table([('Date', 'string')], name='metadata'))
+    con.insert('metadata', pd.DataFrame({'Date': [date]}), overwrite=True)
+    return con
+
+def initialize_from_excel(con, filename, table_name):
     """
         Initialize a table in the database from an Excel file.
 
@@ -20,7 +43,23 @@ def initialize_from_excel(con, filename):
 
 
     df = pd.read_excel(io=filename, sheet_name=None)['Sheet']
-    con.create_table('wafers', ibis.memtable(df))
+    con.create_table(table_name, ibis.memtable(df))
+
+def save_to_excel(con, table_name, filename):
+    """
+        Save a table in the database to an Excel file.
+
+        Args:
+            con (ibis.backends.base.BaseBackend): The Ibis connection object to the database.
+            table_name (str): The name of the table to be saved.
+            filename (str): The path to the Excel file to be written.
+
+        Returns:
+            None
+    """
+
+    df = con.table(table_name).execute()
+    df.to_excel(filename)
 
 def database_from_excel(con):
     """ 
@@ -33,8 +72,8 @@ def database_from_excel(con):
         None
     """
 
-    initialize_from_excel(con, 'wafers.xlsx')
-    initialize_from_excel(con, 'all_wafers.xlsx')
+    initialize_from_excel(con, './database/wafers.xlsx', 'wafers')
+    initialize_from_excel(con, './database/all_wafers.xlsx', 'chips')
 
 def read_database(con, table_name):
     """
@@ -96,11 +135,14 @@ def update_database(con, table_name, row):
     con.insert(table_name, row)
 
 if __name__ == '__main__':
+    con = load_most_recent()
     ibis.options.interactive = True
     try:
         database_from_excel(con)
     except Exception as e:
         print(e)
+        
+    print(con.list_tables())
     
     # Load the database
     wafers = con.table('wafers')
