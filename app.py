@@ -125,7 +125,7 @@ modal_edit = dbc.Modal([
             id="edit-modal-wid-dropdown",
             options=[{"label": wid, "value": wid} for wid in load_wafer_ids()],
             placeholder="Select a Wafer ID",
-            value=''
+            value=None
         ),
         html.Hr(),
 
@@ -162,7 +162,7 @@ modal_edit = dbc.Modal([
     dbc.ModalFooter(
         dbc.Button("Close", id="edit-modal-close", className="ms-auto", n_clicks=0)
     )
-], id="edit-modal", is_open=False)
+], id="edit-modal", is_open=False, keyboard=False, backdrop="static")
 
 
 
@@ -230,6 +230,7 @@ def render_page_content(pathname):
                 ],
                 className="g-4"
             ),
+            modal_edit
         ])
         return app.layout
 
@@ -256,7 +257,8 @@ def render_page_content(pathname):
 # Callbacks
 @app.callback(
     Output("edit-modal", "is_open"),
-    [Input("editWafer", "n_clicks"), Input("edit-modal-close", "n_clicks")],
+    [Input("editWafer", "n_clicks"), 
+     Input("edit-modal-close", "n_clicks")],
     [State("edit-modal", "is_open")]
 )
 def edit_modal_toggle(open_clicks, close_clicks, is_open):
@@ -274,13 +276,16 @@ def edit_modal_toggle(open_clicks, close_clicks, is_open):
      Output("edit-modal-quality-dropdown", "value"),
      Output("edit-modal-intuse-input", "value"),
      Output("edit-modal-summary-input", "value")],
-    Input("edit-modal-wid-dropdown", "value")
+    [Input("edit-modal-wid-dropdown", "value"), Input('selected_wafer', 'children')],
+    [State('edit-modal', 'is_open')]
 )
-def edit_modal_update_fields(selected_wid):
-    if selected_wid:
+def edit_modal_update_fields(selected_wid, selected_wafer, is_open):
+    if not is_open and selected_wafer is not None:
+        selected_wid = selected_wafer
+    if selected_wid in load_wafer_ids():
         con = load_most_recent()
         # Replace this logic with your database fetching code
-        wafers = read_database(con, 'wafers')
+        wafers = read_database(con, 'wafers') 
         data = wafers.filter([wafers['Wafer_ID'] == selected_wid]).execute()
         return (data['Wafer_ID'].values[0], 
                 data['Year'].values[0], 
@@ -321,8 +326,8 @@ def edit_modal_submit_data(n_clicks_submit,
         return 
 
 
-@app.callback(Output('table', 'children'), [Input('dropdownYear', 'value')])
-def update_output(dropdownYear):
+@app.callback(Output('table', 'children'), [Input('dropdownYear', 'value'), Input('edit-modal-close', 'n_clicks')])
+def update_output(dropdownYear, n_clicks):
     con = load_most_recent()
     wdf = read_database(con, 'wafers').execute()
     if dropdownYear is None:
@@ -344,6 +349,7 @@ def update_output(dropdownYear):
         columnSize="sizeToFit",
         dashGridOptions={"domLayout": "autoHeight"}
     )
+    return table
 
 @app.callback(
     Output("selected_wafer", "children"),
@@ -351,7 +357,9 @@ def update_output(dropdownYear):
 )
 def display_cell_clicked_on(cell):
     if cell:
-        wafer = cell['value']
+        con = load_most_recent()
+        wdf = read_database(con, 'wafers').execute()
+        wafer = wdf.loc[cell['rowIndex']]['Wafer_ID']
     else:
         wafer = "None"
     return wafer
@@ -412,7 +420,7 @@ def updateChipFigures(wafer):
         dff = df.iloc[i]
         xC = np.array([dff['x1'], dff['x2'], dff['x3'], dff['x4']])
         yC = np.array([dff['y1'], dff['y2'], dff['y3'], dff['y4']])
-        fig.add_trace(go.Scatter(x=xC, y=yC, fill="toself", name=dff['Chip ID']))
+        fig.add_trace(go.Scatter(x=xC, y=yC, fill="toself", name=dff['Chip_ID']))
 
     figure = html.Div([dcc.Graph(figure=fig)])
 
