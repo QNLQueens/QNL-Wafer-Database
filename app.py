@@ -382,13 +382,10 @@ def update_output(dropdownYear, n_clicks):
     It creates and returns an AgGrid table component with the filtered or unfiltered data.
     
     Args:
-        dropdownYear : int or None
-            The year to filter the wafer data by. If None, shows all years.
-        n_clicks : int
-            Number of button clicks (not used in current implementation).
+        dropdownYear (int or None): The year to filter the wafer data by. If None, shows all years.
+        n_clicks (int): Number of button clicks (not used in current implementation).
     Returns:
-        dash_ag_grid.AgGrid
-            An AgGrid table component populated with the wafer data.
+        dash_ag_grid.AgGrid: An AgGrid table component populated with the wafer data.
     
     Notes:
         The function uses two different column definitions:
