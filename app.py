@@ -262,6 +262,17 @@ def render_page_content(pathname):
     [State("edit-modal", "is_open")]
 )
 def edit_modal_toggle(open_clicks, close_clicks, is_open):
+    """
+    Toggles the state of a modal window based on click events.
+
+    Args:
+        open_clicks (int): The number of times the open button has been clicked.
+        close_clicks (int): The number of times the close button has been clicked.
+        is_open (bool): The current state of the modal window (True if open, False if closed).
+
+    Returns:
+        bool: The new state of the modal window (True if it should be open, False if it should be closed).
+    """
     if open_clicks or close_clicks:
         return not is_open
     return is_open
@@ -280,6 +291,27 @@ def edit_modal_toggle(open_clicks, close_clicks, is_open):
     [State('edit-modal', 'is_open')]
 )
 def edit_modal_update_fields(selected_wid, selected_wafer, is_open):
+    """ 
+    Updates the fields of the edit modal based on the selected wafer ID.
+    
+    Args:
+        selected_wid (str): The ID of the selected wafer.
+        selected_wafer (str): The wafer selected by the user.
+        is_open (bool): A flag indicating whether the modal is open.
+    Returns:
+        tuple: A tuple containing the wafer details in the following order:
+            - Wafer_ID (str or None)
+            - Year (str or None)
+            - Type (str or None)
+            - Date_Acquired (str or None)
+            - Origin (str or None)
+            - Substrate (str or None)
+            - Quality (str or None)
+            - Intended_Use (str or None)
+            - Summary (str or None)
+            If the wafer ID is not found, returns a tuple of Nones.
+"""
+
     if not is_open and selected_wafer is not None:
         selected_wid = selected_wafer
     if selected_wid in load_wafer_ids():
@@ -313,10 +345,26 @@ def edit_modal_update_fields(selected_wid, selected_wafer, is_open):
      Input("edit-modal-summary-input", "value")
      ],
 )
-def edit_modal_submit_data(n_clicks_submit,
-                n_clicks_close,
-                wid, year, wtype, date, create, substrate, quality, intuse, summary
-                ):
+def edit_modal_submit_data(n_clicks_submit, n_clicks_close, wid, year, wtype, date, create, substrate, quality, intuse, summary): 
+    """
+    Handles the submission and closing of the edit modal form.
+
+    Args:
+        n_clicks_submit (int): Number of times the submit button has been clicked.
+        n_clicks_close (int): Number of times the close button has been clicked.
+        wid (str): Wafer ID.
+        year (int): Year of the wafer.
+        wtype (str): Type of the wafer.
+        date (str): Date of the wafer creation.
+        create (str): Creator of the wafer.
+        substrate (str): Substrate used for the wafer.
+        quality (str): Quality of the wafer.
+        intuse (str): Intended use of the wafer.
+        summary (str): Summary of the wafer details.
+    Returns:
+        None
+    """
+    
     if n_clicks_submit:
         con = load_most_recent()
         wafers = read_database(con, 'wafers')
@@ -328,6 +376,25 @@ def edit_modal_submit_data(n_clicks_submit,
 
 @app.callback(Output('table', 'children'), [Input('dropdownYear', 'value'), Input('edit-modal-close', 'n_clicks')])
 def update_output(dropdownYear, n_clicks):
+    """
+    Updates the AgGrid table display based on the selected year.
+    This function retrieves wafer data from the database and filters it by year if specified.
+    It creates and returns an AgGrid table component with the filtered or unfiltered data.
+    
+    Args:
+        dropdownYear : int or None
+            The year to filter the wafer data by. If None, shows all years.
+        n_clicks : int
+            Number of button clicks (not used in current implementation).
+    Returns:
+        dash_ag_grid.AgGrid
+            An AgGrid table component populated with the wafer data.
+    
+    Notes:
+        The function uses two different column definitions:
+        - gwcolumnDefs: for displaying all wafer data
+        - wcolumnDefs: for displaying year-filtered data
+    """
     con = load_most_recent()
     wdf = read_database(con, 'wafers').execute()
     if dropdownYear is None:
