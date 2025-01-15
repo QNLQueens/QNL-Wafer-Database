@@ -180,6 +180,8 @@ class WaferEdit:
         self.window.destroy()
 
 
+    
+
 if __name__ == "__main__":
     root = tkinter.Tk()
     app = WaferEdit(root)

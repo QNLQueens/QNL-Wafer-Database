@@ -1,89 +1,61 @@
 #import all libraries
-
-import subprocess
 import dash
 from dash import Dash, html, dcc
-import tkinter as tk
-from tkinter import ttk, simpledialog, messagebox, filedialog
 import os
-import openpyxl
 import pandas as pd
-import threading
 from dash.dependencies import Input, Output, State
 import dash_ag_grid as dag
-import json
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import matplotlib.patches as patches
-import math
 import numpy as np
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 
 from database import *
 
-#import the tkinter apps to add new wafers and chips from their respective files in the folder
-from chipApp import WaferApp
-from waferApp import WaferAdd
-from edit import WaferEdit
+
+# Function to load wafer IDs
+def load_wafer_ids():
+    con = load_most_recent()
+    wafers = read_database(con, 'wafers')
+    wafer_ids = wafers['Wafer_ID'].execute().values
+    return wafer_ids
 
 #opens the text for the tutorial page
 tut = open("tutorial.txt", "r")
 
-#functions to call the tkinter apps (will be used in Callbacks)
-def add_new_chip_interface():
-    root = tk.Tk()
-    root.title("Wafer Drawing App")
-    app = WaferApp(root)
-    root.mainloop()
-    
-def add_new_wafer_interface():
-    root = tk.Tk()
-    root.title("Add New Wafer")
-    app = WaferAdd(root)
-    root.mainloop()
-
-def edit_wafer_interface():
-    root = tk.Tk()
-    root.title("Edit Wafer")
-    app = WaferEdit(root)
-
-    root.mainloop()
-
-
 #column definitions for the data tables:
 #wafers (once year is selected)
 wcolumnDefs = [
-    { 'field': 'Wafer ID' },
+    { 'field': 'Wafer_ID' },
     { 'field': 'Type'},
-    { 'field': 'Intended Use'},
-    { 'field': 'Date Acquired'},
+    { 'field': 'Intended_Use'},
+    { 'field': 'Date_Acquired'},
     { 'field': 'Summary'},
-    { 'field': 'From'},
+    { 'field': 'Origin'},
     { 'field': 'Substrate'},
     { 'field': 'Quality'}
 ]
 #wafers (when no year is selected)
 gwcolumnDefs = [
     { 'field': 'Year' },
-    { 'field': 'Wafer ID' },
+    { 'field': 'Wafer_ID' },
     { 'field': 'Type'},
-    { 'field': 'Intended Use'},
-    { 'field': 'Date Acquired'},
+    { 'field': 'Intended_Use'},
+    { 'field': 'Date_Acquired'},
     { 'field': 'Summary'},
-    { 'field': 'From'},
+    { 'field': 'Origin'},
     { 'field': 'Substrate'},
     { 'field': 'Quality'}
 ]
 #chips
 ccolumnDefs = [
-    { 'field': 'Chip ID' },
+    { 'field': 'Chip_ID' },
     { 'field': 'Owner' },
     { 'field': 'Device' },
 ]
-
-
 
 #initialize app (dbc.theme.CYBORG is the colour theme, CYBORG is the dark mode-ish thing that is active right now)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
@@ -120,7 +92,7 @@ sidebar = html.Div(
         #Pulls up logo from the assets folder, note the classNames, these are referring to the stylesheet
         html.Img(src="assets/qnllogo.jpeg", className="banner"),
         html.H2("QNL Wafer Directory", className="display-6", style={"color": "#ffffff", "font-size": "14px"}),
-        dbc.Button('GitHub', id='button_plain', href = "https://github.com/dylan-burke/QNL-Wafer-Database"),
+        dbc.Button('GitHub', id='button_plain', href = "https://github.com/QNLQueens/QNL-Wafer-Database"),
         html.Hr(style={"border-color": "#ffffff"}),
         dbc.Nav(
             [
@@ -143,9 +115,61 @@ sidebar = html.Div(
 # Main content area
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
-app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
+
+# Layout for the edit modal
+modal_edit = dbc.Modal([
+    dbc.ModalHeader(dbc.ModalTitle("Edit Wafer Data")),
+    dbc.ModalBody([
+        dbc.Label("Select Wafer ID"),
+        dcc.Dropdown(
+            id="edit-modal-wid-dropdown",
+            options=[{"label": wid, "value": wid} for wid in load_wafer_ids()],
+            placeholder="Select a Wafer ID",
+            value=''
+        ),
+        html.Hr(),
+
+        dbc.Row([
+            dbc.Col([dbc.Label("Wafer ID"), dbc.Input(id="edit-modal-wid-input", type="text")]),
+            dbc.Col([dbc.Label("Year"), dbc.Input(id="edit-modal-year-input", type="number", min=2015, max=2025)])
+        ], className="mb-3"),
+
+        dbc.Row([
+            dbc.Col([dbc.Label("Wafer Type"), dcc.Dropdown(id="edit-modal-type-dropdown", 
+                                                             options=[{"label": t, "value": t} for t in ["101", "100", "Quarter"]])]),
+            dbc.Col([dbc.Label("Date Acquired"), dbc.Input(id="edit-modal-date-input", type="text", placeholder="MM/DD")])
+        ], className="mb-3"),
+
+        dbc.Row([
+            dbc.Col([dbc.Label("Created At"), dcc.Dropdown(id="edit-modal-origin-dropdown", 
+                                                             options=[{"label": loc, "value": loc} for loc in ["NFK", "NRC"]])]),
+            dbc.Col([dbc.Label("Substrate"), dcc.Dropdown(id="edit-modal-substrate-dropdown", 
+                                                           options=[{"label": sub, "value": sub} for sub in ["InP", "GaAs"]])])
+        ], className="mb-3"),
+
+        dbc.Row([
+            dbc.Col([dbc.Label("Quality"), dcc.Dropdown(id="edit-modal-quality-dropdown", 
+                                                         options=[{"label": q, "value": q} for q in ["Good", "Bad"]])])
+        ], className="mb-3"),
+
+        dbc.Row([
+            dbc.Col([dbc.Label("Intended Use"), dbc.Input(id="edit-modal-intuse-input", type="text")]),
+            dbc.Col([dbc.Label("Summary"), dbc.Input(id="edit-modal-summary-input", type="text")])
+        ], className="mb-3"),
+
+        dbc.Button("Submit", id="edit-modal-submit-button", color="success", className="mt-3")
+    ]),
+    dbc.ModalFooter(
+        dbc.Button("Close", id="edit-modal-close", className="ms-auto", n_clicks=0)
+    )
+], id="edit-modal", is_open=False)
 
 
+
+app.layout = html.Div([dcc.Location(id="url"), 
+                       sidebar, 
+                       content,
+                       modal_edit])
 
 # Callbacks for page content and interactions
 
@@ -163,7 +187,6 @@ def render_page_content(pathname):
                 options=[{'label': i, 'value': i} for i in wdf.Year.unique()],
                 style={'color': '#000000', 'background-color': '#ffffff', 'border': '1px solid #ced4da', 'border-radius': '4px', 'font-size': '12px'}
             ),
-            dbc.Button('Refresh', id='refresh', color="primary", className="mb-2", style={"font-size": "12px", "width": "10%"}),
             html.Br(),
             dbc.Card(
                 dbc.CardBody(
@@ -230,8 +253,76 @@ def render_page_content(pathname):
         className="p-3 bg-light rounded-3",
     )
 
-@app.callback(Output('table', 'children'), [Input('dropdownYear', 'value'), Input('refresh', 'n_clicks')])
-def update_output(dropdownYear, n_clicks):
+# Callbacks
+@app.callback(
+    Output("edit-modal", "is_open"),
+    [Input("editWafer", "n_clicks"), Input("edit-modal-close", "n_clicks")],
+    [State("edit-modal", "is_open")]
+)
+def edit_modal_toggle(open_clicks, close_clicks, is_open):
+    if open_clicks or close_clicks:
+        return not is_open
+    return is_open
+
+@app.callback(
+    [Output("edit-modal-wid-input", "value"),
+     Output("edit-modal-year-input", "value"),
+     Output("edit-modal-type-dropdown", "value"),
+     Output("edit-modal-date-input", "value"),
+     Output("edit-modal-origin-dropdown", "value"),
+     Output("edit-modal-substrate-dropdown", "value"),
+     Output("edit-modal-quality-dropdown", "value"),
+     Output("edit-modal-intuse-input", "value"),
+     Output("edit-modal-summary-input", "value")],
+    Input("edit-modal-wid-dropdown", "value")
+)
+def edit_modal_update_fields(selected_wid):
+    if selected_wid:
+        con = load_most_recent()
+        # Replace this logic with your database fetching code
+        wafers = read_database(con, 'wafers')
+        data = wafers.filter([wafers['Wafer_ID'] == selected_wid]).execute()
+        return (data['Wafer_ID'].values[0], 
+                data['Year'].values[0], 
+                data['Type'].values[0], 
+                data['Date_Acquired'].values[0], 
+                data['Origin'].values[0], 
+                data['Substrate'].values[0], 
+                data['Quality'].values[0], 
+                data['Intended_Use'].values[0], 
+                data['Summary'].values[0])
+        
+    return (None, None, None, None, None, None, None, None, None)
+
+@app.callback(
+    [Input("edit-modal-submit-button", "n_clicks"),
+     Input("edit-modal-close", "n_clicks"),
+     Input("edit-modal-wid-input", "value"),
+     Input("edit-modal-year-input", "value"),
+     Input("edit-modal-type-dropdown", "value"),
+     Input("edit-modal-date-input", "value"),
+     Input("edit-modal-origin-dropdown", "value"),
+     Input("edit-modal-substrate-dropdown", "value"),
+     Input("edit-modal-quality-dropdown", "value"),
+     Input("edit-modal-intuse-input", "value"),
+     Input("edit-modal-summary-input", "value")
+     ],
+)
+def edit_modal_submit_data(n_clicks_submit,
+                n_clicks_close,
+                wid, year, wtype, date, create, substrate, quality, intuse, summary
+                ):
+    if n_clicks_submit:
+        con = load_most_recent()
+        wafers = read_database(con, 'wafers')
+        new_row = pd.DataFrame([[wid, year, wtype, intuse, date, summary, create, substrate, quality]], columns=wafers.columns)
+        update_database(con, 'wafers', new_row)
+    if n_clicks_close:
+        return 
+
+
+@app.callback(Output('table', 'children'), [Input('dropdownYear', 'value')])
+def update_output(dropdownYear):
     con = load_most_recent()
     wdf = read_database(con, 'wafers').execute()
     if dropdownYear is None:
@@ -253,7 +344,6 @@ def update_output(dropdownYear, n_clicks):
         columnSize="sizeToFit",
         dashGridOptions={"domLayout": "autoHeight"}
     )
-    return table
 
 @app.callback(
     Output("selected_wafer", "children"),
@@ -275,7 +365,7 @@ def display_cell_clicked_on(cell):
 def updateChipFigures(wafer):
     con = load_most_recent()
     cdf = read_database(con, 'chips').execute()
-    cdata = cdf.loc[cdf['Wafer Wafer ID'] == wafer]
+    cdata = cdf.loc[cdf['Wafer_ID'] == wafer]
 
     dtable = dag.AgGrid(
         id="get-started-example-basic",
@@ -327,24 +417,6 @@ def updateChipFigures(wafer):
     figure = html.Div([dcc.Graph(figure=fig)])
 
     return dtable, figure
-
-@app.callback([Input("addNewWafer", "n_clicks")])
-def handle_button_click(n_clicks):
-    if n_clicks > 0:
-        add_new_wafer_interface()
-    return
-
-@app.callback([Input("addNewChip", "n_clicks")])
-def handle_button_click(n_clicks):
-    if n_clicks > 0:
-        add_new_chip_interface()
-    return
-
-@app.callback([Input("editWafer","n_clicks"), Input('dropdownYear', 'value')])
-def handle_button_click(n_clicks, dropdownYear):
-    if n_clicks > 0:
-        edit_wafer_interface()
-    return
 
 
 if __name__ == "__main__":

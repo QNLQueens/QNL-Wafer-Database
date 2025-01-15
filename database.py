@@ -20,13 +20,18 @@ def load_most_recent():
     """
     date = datetime.datetime.now().strftime('%Y-%m-%d')
     data_files = glob.glob('./database/data*.sqlite3')
+    con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
     if len(data_files) != 0: 
         most_recent_file = max(data_files, key=os.path.getctime) 
         con_old = ibis.sqlite.connect(most_recent_file)
         metadata = con_old.table('metadata').execute()
         if metadata['Date'][0] == date:
             return con_old
-    con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
+        else:
+            wafers = con_old.table('wafers')
+            chips = con_old.table('chips')
+            con.create_table('wafers', wafers)
+            con.create_table('chips', chips)
     con.create_table('metadata', ibis.table([('Date', 'string')], name='metadata'))
     con.insert('metadata', pd.DataFrame({'Date': [date]}), overwrite=True)
     return con
@@ -149,7 +154,7 @@ def overwrite_database(con, table_name, df):
 
     con.insert(table_name, df, overwrite=True)
 
-def update_database(con, table_name, row, index='Wafer ID'):
+def update_database(con, table_name, row, index='Wafer_ID'):
     """
         Append a row to a table in the database.
 
@@ -162,8 +167,9 @@ def update_database(con, table_name, row, index='Wafer ID'):
             None
     """
     table = con.table(table_name).execute()
-    if row[index] in table[index].values:
-        con.update(table_name, row)
+    if row[index].values in table[index].values:
+        table = table[table[index] != row[index].values[0]]
+        overwrite_database(con, table_name, table)
 
     con.insert(table_name, row)
 
@@ -173,8 +179,10 @@ def execute(con):
 if __name__ == '__main__':
     con = load_most_recent()
     ibis.options.interactive = True
-    
-    database_from_excel(con)
+    try:
+        database_from_excel(con)
+    except sqlite3.OperationalError:
+        pass
         
     print(con.list_tables())
 
