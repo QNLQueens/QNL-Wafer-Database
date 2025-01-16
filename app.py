@@ -125,7 +125,8 @@ modal_edit = dbc.Modal([
             id="edit-modal-wid-dropdown",
             options=[{"label": wid, "value": wid} for wid in load_wafer_ids()],
             placeholder="Select a Wafer ID",
-            value=None
+            value=None,
+            style={'color': '#000000'}
         ),
         html.Hr(),
 
@@ -162,7 +163,8 @@ modal_edit = dbc.Modal([
     dbc.ModalFooter(
         dbc.Button("Close", id="edit-modal-close", className="ms-auto", n_clicks=0)
     )
-], id="edit-modal", is_open=False, keyboard=False, backdrop="static")
+], id="edit-modal", is_open=False, keyboard=False, backdrop="static",
+                       style={'color': '#ffffff', 'border': '1px solid #ced4da', 'border-radius': '4px', 'font-size': '12px'})
 
 
 

@@ -20,18 +20,21 @@ def load_most_recent():
     """
     date = datetime.datetime.now().strftime('%Y-%m-%d')
     data_files = glob.glob('./database/data*.sqlite3')
-    con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
     if len(data_files) != 0: 
         most_recent_file = max(data_files, key=os.path.getctime) 
         con_old = ibis.sqlite.connect(most_recent_file)
         metadata = con_old.table('metadata').execute()
-        if metadata['Date'][0] == date:
+        if metadata['Date'].values[0] == date:
             return con_old
-        else:
-            wafers = con_old.table('wafers')
-            chips = con_old.table('chips')
-            con.create_table('wafers', wafers)
-            con.create_table('chips', chips)
+        con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
+        wafers = con_old.table('wafers').execute()
+        chips = con_old.table('chips').execute()
+        con.create_table('wafers', wafers)
+        con.create_table('chips', chips)
+    else:
+        con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
+        initialize_from_excel(con, './database/wafers.xlsx', 'wafers')
+        initialize_from_excel(con, './database/all_wafers.xlsx', 'chips', index='Chip ID')
     con.create_table('metadata', ibis.table([('Date', 'string')], name='metadata'))
     con.insert('metadata', pd.DataFrame({'Date': [date]}), overwrite=True)
     return con
