@@ -137,15 +137,18 @@ modal_edit = dbc.Modal([
 
         dbc.Row([
             dbc.Col([dbc.Label("Wafer Type"), dcc.Dropdown(id="edit-modal-type-dropdown", 
-                                                             options=[{"label": t, "value": t} for t in ["101", "100", "Quarter"]])]),
+                                                             options=[{"label": t, "value": t} for t in ["101", "100", "Quarter"]], 
+                                                             style={'color': '#000000'})]),
             dbc.Col([dbc.Label("Date Acquired"), dbc.Input(id="edit-modal-date-input", type="text", placeholder="MM/DD")])
         ], className="mb-3"),
 
         dbc.Row([
             dbc.Col([dbc.Label("Created At"), dcc.Dropdown(id="edit-modal-origin-dropdown", 
-                                                             options=[{"label": loc, "value": loc} for loc in ["NFK", "NRC"]])]),
+                                                             options=[{"label": loc, "value": loc} for loc in ["NFK", "NRC"]],
+                                                             style={'color': '#000000'})]),
             dbc.Col([dbc.Label("Substrate"), dcc.Dropdown(id="edit-modal-substrate-dropdown", 
-                                                           options=[{"label": sub, "value": sub} for sub in ["InP", "GaAs"]])])
+                                                           options=[{"label": sub, "value": sub} for sub in ["InP", "GaAs"]],
+                                                           style={'color': '#000000'})])
         ], className="mb-3"),
 
         dbc.Row([
@@ -165,8 +168,6 @@ modal_edit = dbc.Modal([
     )
 ], id="edit-modal", is_open=False, keyboard=False, backdrop="static",
                        style={'color': '#ffffff', 'border': '1px solid #ced4da', 'border-radius': '4px', 'font-size': '12px'})
-
-
 
 app.layout = html.Div([dcc.Location(id="url"), 
                        sidebar, 
