@@ -57,6 +57,12 @@ ccolumnDefs = [
     { 'field': 'Device' },
 ]
 
+layerDefs = [
+    { 'field': 'Material'},
+    { 'field': 'Thickness'},
+    { 'field': 'Doping'}
+]
+
 #initialize app (dbc.theme.CYBORG is the colour theme, CYBORG is the dark mode-ish thing that is active right now)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 app.config.suppress_callback_exceptions=True
@@ -216,23 +222,49 @@ def render_page_content(pathname):
                             style={"max-height": "500px", "overflow-y": "auto"}
                         ),
                         width=6
+                    
+                    
                     ),
                     dbc.Col(
                         dbc.Card(
                             dbc.CardBody(
                                 [
                                     html.H4("Wafer Map", className="card-title", style={"font-size": "14px"}),
-                                    html.Div(id='fig', style={'max-width': "500px", 'max-height': "500px", "margin": "auto"}),
+                                    html.Div(id='fig', style={'max-width': "500px", 'max-height': "500px", "margin": "auto"}), 
                                 ]
                             ),
-                            className="mb-3"
+                            className='mb-3'
                         ),
-                        width=6
+                        width = 6
                     ),
+
                 ],
                 className="g-4"
+
+                
+
             ),
-            modal_edit
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Card(
+                            dbc.CardBody(
+                                [
+                                    html.Div(id='lTable'),
+                                ]
+                            ),
+                            className='mb-3'
+                        ),
+                        width = 6
+                    ),
+
+
+                ],
+                className= 'g-4'
+           
+            ),
+            modal_edit,
+            
         ])
         return app.layout
 
@@ -433,9 +465,11 @@ def display_cell_clicked_on(cell):
 
 @app.callback(
     Output("dTable", "children"),
+    Output("lTable", "children"),
     Output("fig", "children"),
     Input("selected_wafer", "children")
 )
+
 def updateChipFigures(wafer):
     con = load_most_recent()
     cdf = read_database(con, 'chips').execute()
@@ -448,7 +482,17 @@ def updateChipFigures(wafer):
         dashGridOptions={"domLayout": "autoHeight"},
         style={"height": None},
         columnSize="sizeToFit"
+    )    
+
+    ltable = dag.AgGrid(
+        id="get-started-example-basic",
+        rowData=cdata.to_dict("records"),
+        columnDefs=layerDefs,
+        dashGridOptions={"domLayout": "autoHeight"},
+        style={"height": None},
+        columnSize="sizeToFit"
     )
+
 
     df = cdata
     xC = df.apply(lambda row: np.array([row['x1'], row['x2'], row['x3'], row['x4']]), axis=1)
@@ -490,7 +534,7 @@ def updateChipFigures(wafer):
 
     figure = html.Div([dcc.Graph(figure=fig)])
 
-    return dtable, figure
+    return dtable, ltable, figure
 
 
 if __name__ == "__main__":
