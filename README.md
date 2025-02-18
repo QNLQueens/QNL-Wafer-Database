@@ -3,7 +3,7 @@ Web interface to access the Wafer Samples used by the Queen's Nanophotonics Lab 
 
 References are included at the end with a short description. Highly recommend going through these to help understanding of the code in general.
 
-Contact: Dylan (dylan.burke@queensu.ca)
+Contact: Kristina (23hh45@queensu.ca)
 
 ## Intro
 This database is a system of two programs which serves as a directory to easily access information about the Wafer Samples at QNL. Specifically, the aim of this project is to be able to easily access information about both wafers as well as the devices on the wafers. 
