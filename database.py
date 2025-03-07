@@ -26,16 +26,36 @@ def load_most_recent():
         con_old = ibis.sqlite.connect(most_recent_file)
         metadata = con_old.table('metadata').execute()
         if metadata['Date'].values[0] == date:
+            # Ensure con_old contains all the tables we want
+            tables = con_old.list_tables()
+            if 'wafers' not in tables:
+                initialize_from_excel(con_old, './database/wafers.xlsx', 'wafers')
+            if 'chips' not in tables:
+                initialize_from_excel(con_old, './database/all_wafers.xlsx', 'chips', index='Chip ID')
+            if 'epistructures' not in tables:
+                initialize_from_excel(con_old, './database/epistructure_data.xlsx', 'epistructures', index='Layer ID')
             return con_old
         con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
-        wafers = con_old.table('wafers').execute()
-        chips = con_old.table('chips').execute()
-        con.create_table('wafers', wafers)
-        con.create_table('chips', chips)
+        try:
+            wafers = con_old.table('wafers').execute()
+            con.create_table('wafers', wafers)
+        except sqlite3.OperationalError:
+            wafers = initialize_from_excel(con, './database/wafers.xlsx', 'wafers')
+        try:
+            chips = con_old.table('chips').execute()
+            con.create_table('chips', chips)
+        except sqlite3.OperationalError:
+            chips = initialize_from_excel(con, './database/all_wafers.xlsx', 'chips', index='Chip ID')
+            con.create_table('epistructures', epistructures)
+        try:
+            epistructures = con_old.table('epistructures').execute()
+        except ibis.common.exceptions.IbisError:
+            epistructures = initialize_from_excel(con, './database/epistructure_data.xlsx', 'epistructures', index='Layer ID')
     else:
         con = ibis.sqlite.connect(f'./database/data{date}.sqlite3')
         initialize_from_excel(con, './database/wafers.xlsx', 'wafers')
         initialize_from_excel(con, './database/all_wafers.xlsx', 'chips', index='Chip ID')
+        initialize_from_excel(con, './database/epistructures.xlsx', 'epistructures')
     con.create_table('metadata', ibis.table([('Date', 'string')], name='metadata'))
     con.insert('metadata', pd.DataFrame({'Date': [date]}), overwrite=True)
     return con
@@ -55,6 +75,7 @@ def initialize_from_excel(con, filename, table_name, index='Wafer ID'):
 
     df = pd.read_excel(io=filename, sheet_name=None)['Sheet']
     df = df.fillna('')
+
     object_columns = df.select_dtypes(include='object').columns
     for column in object_columns:
         df[column] = df[column].astype('string')
@@ -63,8 +84,10 @@ def initialize_from_excel(con, filename, table_name, index='Wafer ID'):
     # The ID column will have the unique constraint, and be the main key
     create_table = f'CREATE TABLE {table_name} (\n'
     columns = df.columns
-    columns = columns.drop(index)
-    create_table += f'{index.replace(' ', '_')} TEXT PRIMARY KEY,\n'
+    if index:
+        columns = columns.drop(index)
+        create_table += f'{index.replace(' ', '_')} TEXT PRIMARY KEY,\n'
+
     for column in columns:
         datatype = df[column].dtype
         column = column.replace(' ', '_')
@@ -76,11 +99,10 @@ def initialize_from_excel(con, filename, table_name, index='Wafer ID'):
             create_table += f'{column} TEXT,\n'
     create_table = create_table[:-2] + ')'
     con.raw_sql(create_table)
-    df = df.reindex(columns=[index] + list(columns))
+    if index:
+        df = df.reindex(columns=[index] + list(columns))
     con.insert(table_name, df)
-
-
-    
+ 
     # con.create_table(table_name, ibis.memtable(df))
     # print(con.compile(con.create_table(table_name, ibis.memtable(df))))
 
@@ -113,6 +135,7 @@ def database_from_excel(con):
 
     initialize_from_excel(con, './database/wafers.xlsx', 'wafers')
     initialize_from_excel(con, './database/all_wafers.xlsx', 'chips', index='Chip ID')
+    initialize_from_excel(con, './database/epistructure_data.xlsx', 'epistructures', index=None)
 
 def read_database(con, table_name):
     """
@@ -194,8 +217,11 @@ if __name__ == '__main__':
     # Load the database
     wafers = con.table('wafers')
     chips = con.table('chips')
+    epistructures = con.table('epistructures')
 
     print(wafers.head())
+    print(chips.head())
+    print(epistructures.head())
 
     try:
         con.drop_table('wafers2')

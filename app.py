@@ -58,9 +58,12 @@ ccolumnDefs = [
 ]
 
 layerDefs = [
+    { 'field': 'Layer'},
     { 'field': 'Material'},
+    { 'field': 'Layer_Type'},
     { 'field': 'Thickness'},
-    { 'field': 'Doping'}
+    { 'field': 'Doping_Type'},
+    { 'field': 'Doping_Concentration'}
 ]
 
 #initialize app (dbc.theme.CYBORG is the colour theme, CYBORG is the dark mode-ish thing that is active right now)
@@ -181,14 +184,13 @@ app.layout = html.Div([dcc.Location(id="url"),
                        modal_edit])
 
 # Callbacks for page content and interactions
-
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 #shows the relevant content based on which page you are viewing
 def render_page_content(pathname):
     con = load_most_recent()
     wdf = read_database(con, 'wafers').execute()
     if pathname == "/":
-        app.layout = html.Div([
+        return html.Div([
             #year select
             html.H2("Select Year:", style={'text-align': 'left', 'font-size': "15px", 'color':'#000000'}),
             dcc.Dropdown(
@@ -201,31 +203,31 @@ def render_page_content(pathname):
                 dbc.CardBody(
                     [
                         html.H4("Wafer Details", className="card-title", style={"font-size": "14px"}),
-                        html.Div(id='table', children=[], style={'font-family': "Open Sans"}),
+                        html.Div(id='wafer-table', children=[]),
                     ]
                 ),
                 className="mb-3",
                 style={"max-height": "200px", "overflow-y": "auto"}
             ),
-            html.H2("Selected Wafer:", style={'text-align': 'left', 'font-size': "12px", 'color':'#000000'}),
-            dbc.Button('Edit Wafer', id='editWafer', color="primary", className="mb-2", style={"font-size": "12px", "width": "10%"}),
-            html.H2(id="selected_wafer", style={"font-size": "14px", 'color':'#d47604'}),
             dbc.Row(
                 [
                     dbc.Col(
-                        dbc.Card(
-                            dbc.CardBody(
-                                [
-                                    html.Div(id='dTable'),
-                                ]
+                        [
+                            html.H2("Selected Wafer:", style={'text-align': 'left', 'font-size': "12px", 'color':'#000000'}),
+                            dbc.Button('Edit Wafer', id='editWafer', color="primary", className="mb-2", style={"font-size": "12px", "width": "10%"}),
+                            html.H2(id="selected_wafer", style={"font-size": "14px", 'color':'#d47604'}),
+                            dbc.Card(
+                                dbc.CardBody(
+                                    [
+                                        html.H4("Chip Details", className="card-title", style={"font-size": "14px"}),
+                                        html.Div(id='chip-table'),
+                                    ]
+                                ),
+                                className="mb-3",
+                                style={"max-height": "500px", "overflow-y": "auto"}
                             ),
-                            className="mb-3",
-                            style={"max-height": "500px", "overflow-y": "auto"}
-                        ),
-                        width=6
-                    
-                    
-                    ),
+                        ],
+                    width = 6),
                     dbc.Col(
                         dbc.Card(
                             dbc.CardBody(
@@ -241,9 +243,6 @@ def render_page_content(pathname):
 
                 ],
                 className="g-4"
-
-                
-
             ),
             dbc.Row(
                 [
@@ -251,32 +250,27 @@ def render_page_content(pathname):
                         dbc.Card(
                             dbc.CardBody(
                                 [
-                                    html.Div(id='lTable'),
+                                    html.H4("Layer Details", className="card-title", style={"font-size": "14px"}),
+                                    html.Div(id='layer-table'),
                                 ]
                             ),
                             className='mb-3'
                         ),
-                        width = 6
                     ),
 
 
                 ],
                 className= 'g-4'
            
-            ),
-            modal_edit,
-            
+            ),  
         ])
-        return app.layout
 
     elif pathname == "/page-1":
         #tutorial page
         return html.Div([
-            
             html.H2("How to Access the Directory", style={"color": "#000000"}),
             html.Br(),
-            html.H6(tut.read(), style={"color": "#000000"})
-            
+            html.H6(tut.read(), style={"color": "#000000"}) 
         ])
 
     # If the user tries to reach a different page, return a 404 message (with QuackNL easter egg!)
@@ -409,7 +403,7 @@ def edit_modal_submit_data(n_clicks_submit, n_clicks_close, wid, year, wtype, da
         return 
 
 
-@app.callback(Output('table', 'children'), [Input('dropdownYear', 'value'), Input('edit-modal-close', 'n_clicks')])
+@app.callback(Output('wafer-table', 'children'), [Input('dropdownYear', 'value'), Input('edit-modal-close', 'n_clicks')])
 def update_output(dropdownYear, n_clicks):
     """
     Updates the AgGrid table display based on the selected year.
@@ -442,7 +436,7 @@ def update_output(dropdownYear, n_clicks):
     wdff = wdf.loc[wdf['Year'] == dropdownYear]
 
     table = dag.AgGrid(
-        id="grid",
+        id="wafer-grid",
         rowData=wdff.to_dict("records"),
         columnDefs=wcolumnDefs,
         columnSize="sizeToFit",
@@ -465,8 +459,8 @@ def display_cell_clicked_on(cell):
 
 
 @app.callback(
-    Output("dTable", "children"),
-    Output("lTable", "children"),
+    Output("chip-table", "children"),
+    Output("layer-table", "children"),
     Output("fig", "children"),
     Input("selected_wafer", "children")
 )
@@ -474,10 +468,14 @@ def display_cell_clicked_on(cell):
 def updateChipFigures(wafer):
     con = load_most_recent()
     cdf = read_database(con, 'chips').execute()
+    ldf = read_database(con, 'epistructures').execute()
     cdata = cdf.loc[cdf['Wafer_ID'] == wafer]
+    ldata = ldf.loc[ldf['Wafer_ID'] == wafer]
+    if not ldata.empty:
+        ldata.sort_values(by=['Layer'], inplace=True) 
 
     dtable = dag.AgGrid(
-        id="get-started-example-basic",
+        id="chip-grid",
         rowData=cdata.to_dict("records"),
         columnDefs=ccolumnDefs,
         dashGridOptions={"domLayout": "autoHeight"},
@@ -486,14 +484,13 @@ def updateChipFigures(wafer):
     )    
 
     ltable = dag.AgGrid(
-        id="get-started-example-basic",
-        rowData=cdata.to_dict("records"),
+        id="layer-grid",
+        rowData=ldata.to_dict("records"),
         columnDefs=layerDefs,
         dashGridOptions={"domLayout": "autoHeight"},
         style={"height": None},
         columnSize="sizeToFit"
     )
-
 
     df = cdata
     xC = df.apply(lambda row: np.array([row['x1'], row['x2'], row['x3'], row['x4']]), axis=1)
