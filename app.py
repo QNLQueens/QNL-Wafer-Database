@@ -5,10 +5,7 @@ import os
 import pandas as pd
 from dash.dependencies import Input, Output, State
 import dash_ag_grid as dag
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.pyplot as plt
-import matplotlib.lines as lines
-import matplotlib.patches as patches
+
 import numpy as np
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
@@ -107,16 +104,14 @@ sidebar = html.Div(
             [
                 #Buttons between pages for wafer select and tutorial pages
                 dbc.NavLink("Wafer Select", href="/", active="exact", className="nav-link text-white"),
+                dbc.NavLink('Add New Wafer', href="/add-wafer", active='exact', class_name="nav-link text-white"),
+                dbc.NavLink('Add New Epistructure', href="/add-epistructure", active='exact', class_name="nav-link text-white"),
                 dbc.NavLink("How To Use", href="/page-1", active="exact", className="nav-link text-white"),
             ],
             vertical=True,
             pills=True,
         ),
         html.Br(),
-        #Add new buttons
-        dbc.Button('Add New Wafer', id='addNewWafer', color="primary", className="mb-2", style={"font-size": "12px", "width": "100%"}),
-        dbc.Button('Add New Chip', id='addNewChip', color="primary", style={"font-size": "12px", "width": "100%"}),
-        
     ],
     style=SIDEBAR_STYLE,
 )
@@ -178,19 +173,42 @@ modal_edit = dbc.Modal([
 ], id="edit-modal", is_open=False, keyboard=False, backdrop="static",
                        style={'color': '#ffffff', 'border': '1px solid #ced4da', 'border-radius': '4px', 'font-size': '12px'})
 
-app.layout = html.Div([dcc.Location(id="url"), 
-                       sidebar, 
-                       content,
-                       modal_edit])
+# Add a modal for navigation options after adding a wafer
+add_wafer_modal = dbc.Modal(
+    [
+        dbc.ModalHeader(dbc.ModalTitle("Wafer Added Successfully")),
+        dbc.ModalBody(
+            "What would you like to do next?",
+            style={"font-size": "14px"}
+        ),
+        dbc.ModalFooter(
+            [
+                dbc.Button("Go to Main Page", id="go-main-page", color="primary", className="me-2"),
+                dbc.Button("Add Another Wafer", id="add-another-wafer", color="success", className="me-2"),
+                dbc.Button("Add Epistructure Data", id="add-epi-data", color="info"),
+            ]
+        ),
+    ],
+    id="add-wafer-modal",
+    is_open=False,
+)
+
+app.layout = html.Div([
+    dcc.Location(id="url"),
+    sidebar,
+    content,
+    modal_edit,
+    add_wafer_modal  # Include the new modal in the layout
+])
 
 # Callbacks for page content and interactions
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
-#shows the relevant content based on which page you are viewing
 def render_page_content(pathname):
     con = load_most_recent()
     wdf = read_database(con, 'wafers').execute()
     if pathname == "/":
         return html.Div([
+            html.H2("Main Page Content", style={"color": "#000000"}),
             #year select
             html.H2("Select Year:", style={'text-align': 'left', 'font-size': "15px", 'color':'#000000'}),
             dcc.Dropdown(
@@ -264,24 +282,84 @@ def render_page_content(pathname):
            
             ),  
         ])
-
     elif pathname == "/page-1":
-        #tutorial page
         return html.Div([
+            html.H2("Tutorial Page Content", style={"color": "#000000"}),
             html.H2("How to Access the Directory", style={"color": "#000000"}),
             html.Br(),
             html.H6(tut.read(), style={"color": "#000000"}) 
         ])
-
-    # If the user tries to reach a different page, return a 404 message (with QuackNL easter egg!)
-    return html.Div(
-        [
-            html.H1("404: Not found", className="text-danger", style={"font-size": "14px"}),
-            html.Hr(),
-            html.Img(src="assets/QuackNL_0.jpg.webp"),
-        ],
-        className="p-3 bg-light rounded-3",
-    )
+    elif pathname == "/add-wafer":
+        return html.Div([
+            html.H2("Add Wafer Page Content", style={"color": "#000000"}),
+            html.H2("Add New Wafer", style={"color": "#000000"}),
+            dbc.Form([
+                dbc.Row([
+                    dbc.Col([dbc.Label("Wafer ID"), dbc.Input(id="add-wafer-id", type="text")]),
+                    dbc.Col([dbc.Label("Year"), dbc.Input(id="add-wafer-year", type="number", min=2015, max=2025)])
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Col([dbc.Label("Wafer Type"), dcc.Dropdown(id="add-wafer-type", 
+                                                                    options=[{"label": t, "value": t} for t in ["3 in", "2 in", "Quarter"]],
+                                                                    style={'color': '#000000'})]),
+                    dbc.Col([dbc.Label("Date Acquired"), dbc.Input(id="add-wafer-date", type="text", placeholder="MM/DD")])
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Col([dbc.Label("Created At"), dcc.Dropdown(id="add-wafer-origin", 
+                                                                    options=[{"label": loc, "value": loc} for loc in ["NFK", "NRC"]],
+                                                                    style={'color': '#000000'})]),
+                    dbc.Col([dbc.Label("Substrate"), dcc.Dropdown(id="add-wafer-substrate", 
+                                                                  options=[{"label": sub, "value": sub} for sub in ["InP", "GaAs"]],
+                                                                  style={'color': '#000000'})])
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Col([dbc.Label("Quality"), dcc.Dropdown(id="add-wafer-quality", 
+                                                                options=[{"label": q, "value": q} for q in ["Good", "Bad"]])])
+                ], className="mb-3"),
+                dbc.Row([
+                    dbc.Col([dbc.Label("Intended Use"), dbc.Input(id="add-wafer-intuse", type="text")]),
+                    dbc.Col([dbc.Label("Summary"), dbc.Input(id="add-wafer-summary", type="text")])
+                ], className="mb-3"),
+                dbc.Button("Submit", id="add-wafer-submit", color="success", className="mt-3")
+            ])
+        ])
+    elif pathname == "/add-epistructure":
+        return html.Div([
+            html.H2("Add Epistructure Page Content", style={"color": "#000000"}),
+            html.H2("Add New Epistructure", style={"color": "#000000"}),
+            dbc.Label("Select Wafer ID"),
+            dcc.Dropdown(
+                id="add-epi-wafer-id",
+                options=[{"label": wid, "value": wid} for wid in load_wafer_ids()],
+                placeholder="Select a Wafer ID",
+                style={'color': '#000000'}
+            ),
+            html.Br(),
+            dag.AgGrid(
+                id="add-epi-grid",
+                columnDefs=[
+                    {"field": "Layer", "editable": True},
+                    {"field": "Material", "editable": True},
+                    {"field": "Layer_Type", "editable": True},
+                    {"field": "Thickness", "editable": True},
+                    {"field": "Doping_Type", "editable": True},
+                    {"field": "Doping_Concentration", "editable": True}
+                ],
+                rowData=[],
+                columnSize="sizeToFit",
+                dashGridOptions={"domLayout": "autoHeight"}
+            ),
+            dbc.Button("Submit", id="add-epi-submit", color="success", className="mt-3")
+        ])
+    else:
+        return html.Div(
+            [
+                html.H1("404: Not found", className="text-danger", style={"font-size": "14px"}),
+                html.Hr(),
+                html.Img(src="assets/QuackNL_0.jpg.webp"),
+            ],
+            className="p-3 bg-light rounded-3",
+        )
 
 # Callbacks
 @app.callback(
@@ -530,6 +608,108 @@ def updateChipFigures(wafer):
     figure = html.Div([dcc.Graph(figure=fig)])
 
     return dtable, ltable, figure
+
+# Callback for adding a new wafer
+@app.callback(
+    [Output("add-wafer-id", "invalid"),
+     Output("add-wafer-modal", "is_open")],  # Removed "add-epi-wafer-id" from outputs
+    Input("add-wafer-submit", "n_clicks"),
+    [State("add-wafer-id", "value"),
+     State("add-wafer-year", "value"),
+     State("add-wafer-type", "value"),
+     State("add-wafer-date", "value"),
+     State("add-wafer-origin", "value"),
+     State("add-wafer-substrate", "value"),
+     State("add-wafer-quality", "value"),
+     State("add-wafer-intuse", "value"),
+     State("add-wafer-summary", "value")]
+)
+def add_wafer(n_clicks, wid, year, wtype, date, origin, substrate, quality, intuse, summary):
+    """
+    Handles adding a new wafer to the database.
+
+    Args:
+        n_clicks (int): Number of clicks on the submit button.
+        wid (str): Wafer ID.
+        year (int): Year of the wafer.
+        wtype (str): Wafer type.
+        date (str): Date acquired.
+        origin (str): Origin of the wafer.
+        substrate (str): Substrate material.
+        quality (str): Quality of the wafer.
+        intuse (str): Intended use of the wafer.
+        summary (str): Summary of the wafer details.
+
+    Returns:
+        tuple: Whether the Wafer ID is invalid and whether to open the modal.
+    """
+    if n_clicks:
+        con = load_most_recent()
+        wafers = read_database(con, 'wafers').execute()
+        if wid in wafers['Wafer_ID'].values:
+            return True, False  # Mark Wafer ID as invalid
+        new_row = pd.DataFrame([[wid, year, wtype, intuse, date, summary, origin, substrate, quality]],
+                               columns=wafers.columns)
+        update_database(con, 'wafers', new_row)
+        return False, True  # Open the modal
+    return False, False
+
+# Handle navigation options from the modal
+@app.callback(
+    Output("url", "pathname"),
+    [Input("go-main-page", "n_clicks"),
+     Input("add-another-wafer", "n_clicks"),
+     Input("add-epi-data", "n_clicks")],
+    State("add-epi-wafer-id", "value")
+)
+def handle_navigation(go_main, add_another, add_epi, wafer_id):
+    if go_main:
+        return "/"
+    elif add_another:
+        return "/add-wafer"
+    elif add_epi and wafer_id:
+        return "/add-epistructure"
+    return dash.no_update
+
+# Consolidate logic for updating "add-epi-wafer-id" and saving epistructure data
+@app.callback(
+    [Output("add-epi-wafer-id", "value"),
+     Output("add-epi-grid", "rowData")],
+    [Input("add-epi-submit", "n_clicks"),
+     Input("add-epi-wafer-id", "value"),
+     Input("url", "pathname")],
+    [State("add-epi-grid", "rowData")]
+)
+def handle_epistructure_data(n_clicks_submit, wid, pathname, current_data):
+    """
+    Handles loading and saving epistructure data for the selected wafer ID.
+
+    Args:
+        n_clicks_submit (int): Number of clicks on the submit button.
+        wid (str): Selected Wafer ID.
+        pathname (str): Current URL pathname.
+        current_data (list): Current data in the grid.
+
+    Returns:
+        tuple: Updated Wafer ID and row data for the grid.
+    """
+    con = load_most_recent()
+
+    # Handle saving epistructure data
+    if n_clicks_submit and wid:
+        epistructures = pd.DataFrame(current_data)
+        epistructures["Wafer_ID"] = wid
+        epistructures["Layer_ID"] = range(1, len(epistructures) + 1)
+        overwrite_database(con, 'epistructures', epistructures)
+        return None, []  # Clear Wafer ID and reset grid after saving
+
+    # Handle loading epistructure data when navigating to the page
+    if pathname == "/add-epistructure" and wid:
+        epistructures = read_database(con, 'epistructures').execute()
+        data = epistructures[epistructures['Wafer_ID'] == wid].drop(columns=["Layer_ID", "Wafer_ID"])
+        return wid, data.to_dict("records")
+
+    return wid, current_data  # Default behavior
 
 if __name__ == "__main__":
     app.run_server(jupyter_mode="external", port=8889, debug=True)

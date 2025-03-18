@@ -245,77 +245,12 @@ def execute(con):
 if __name__ == '__main__':
     con = load_most_recent(from_excel=True)
     ibis.options.interactive = True
-    # try:
-    #     database_from_excel(con)
-    # except sqlite3.OperationalError:
-    #     pass
-        
+
+    # Remove all debugging and testing code
     print(con.list_tables())
 
-    
-    # Load the database
-    wafers = con.table('wafers')
-    chips = con.table('chips')
-    epistructures = con.table('epistructures')
-
-    print(wafers.head())
-    print(chips.head())
-    print(epistructures.head())
-
-    try:
-        con.drop_table('wafers2')
-    except:
-        pass
-
-    # Filter the database
-    wafers2 = wafers.filter([wafers['Year'] == 2024])
-
-    # Write the filtered database to a new table
-    con.create_table('wafers2', wafers2)
-
-    wafers2 = read_database(con, 'wafers2')
-    print(wafers2.head())
-
-    # New filter
-    wafers3 = wafers.filter([wafers['Intended_Use'] == 'Waveguides'])
-
-    # Overwrite the database
-    overwrite_database(con, 'wafers2', wafers3)
-    
-    # Verify the overwrite
-    wafers4 = read_database(con, 'wafers2')
-    print(wafers4.head())
-
-    # Single row update
-    wafers5 = wafers.filter([wafers['Wafer_ID'] == 'QNL-001']).execute()
-    wafers5['Wafer_ID'] = 'testing99'
-    print(wafers5.head())
-
-    update_database(con, 'wafers2', wafers5)
-    
-    # Verify the update
-    wafers6 = read_database(con, 'wafers2')
-    print(wafers6.head())
-
-    con.drop_table('wafers2')
-
-    # con.disconnect()
-    
-    # con = ibis.sqlite.connect('./database/dataTest.sqlite3')
-
-    # database_from_excel(con)
-
-    # # Test saving to excel
+    # Save tables to Excel
     save_to_excel(con, 'wafers', './database/wafers.xlsx', index='Wafer_ID')
     save_to_excel(con, 'chips', './database/chips.xlsx', index='Chip_ID')
     save_to_excel(con, 'epistructures', './database/epistructures.xlsx', index='Layer_ID')
 
-    # # Delete the test database
-    # con.drop_table('wafers')
-    # con.drop_table('chips')
-    # con.drop_table('epistructures')
-    
-    # con.disconnect()
-    
-    # os.remove('./database/dataTest.sqlite3')
-    
