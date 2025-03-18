@@ -402,7 +402,6 @@ def edit_modal_submit_data(n_clicks_submit, n_clicks_close, wid, year, wtype, da
     if n_clicks_close:
         return 
 
-
 @app.callback(Output('wafer-table', 'children'), [Input('dropdownYear', 'value'), Input('edit-modal-close', 'n_clicks')])
 def update_output(dropdownYear, n_clicks):
     """
@@ -457,14 +456,12 @@ def display_cell_clicked_on(cell):
         wafer = "None"
     return wafer
 
-
 @app.callback(
     Output("chip-table", "children"),
     Output("layer-table", "children"),
     Output("fig", "children"),
     Input("selected_wafer", "children")
 )
-
 def updateChipFigures(wafer):
     con = load_most_recent()
     cdf = read_database(con, 'chips').execute()
@@ -533,7 +530,6 @@ def updateChipFigures(wafer):
     figure = html.Div([dcc.Graph(figure=fig)])
 
     return dtable, ltable, figure
-
 
 if __name__ == "__main__":
     app.run_server(jupyter_mode="external", port=8889, debug=True)
